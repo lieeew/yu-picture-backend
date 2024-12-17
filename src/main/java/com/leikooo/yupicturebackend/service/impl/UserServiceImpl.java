@@ -1,8 +1,8 @@
 package com.leikooo.yupicturebackend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.xiaoymin.knife4j.core.util.StrUtil;
+import com.leikooo.yupicturebackend.dao.UserDAO;
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.model.dto.user.UserQueryRequest;
@@ -11,7 +11,6 @@ import com.leikooo.yupicturebackend.model.enums.UserRoleEnum;
 import com.leikooo.yupicturebackend.model.vo.LoginUserVO;
 import com.leikooo.yupicturebackend.model.vo.UserVO;
 import com.leikooo.yupicturebackend.service.UserService;
-import com.leikooo.yupicturebackend.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -19,8 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -29,14 +28,15 @@ import java.util.stream.Collectors;
 import static com.leikooo.yupicturebackend.model.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
-* @author liang
-* @description 针对表【user(用户)】的数据库操作Service实现
-* @createDate 2024-12-12 17:28:56
-*/
+ * @author liang
+ * @description 针对表【user(用户)】的数据库操作Service实现
+ * @createDate 2024-12-12 17:28:56
+ */
 @Slf4j
 @Service
-public class UserServiceImpl extends ServiceImpl<UserMapper, User>
-    implements UserService{
+public class UserServiceImpl implements UserService {
+    @Resource
+    private UserDAO userDAO;
 
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
@@ -56,7 +56,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 2. 检查是否重复
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("userAccount", userAccount);
-        long count = this.baseMapper.selectCount(queryWrapper);
+        long count = userDAO.getBaseMapper().selectCount(queryWrapper);
         if (count > 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号重复");
         }
@@ -68,7 +68,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setUserPassword(encryptPassword);
         user.setUserName("无名");
         user.setUserRole(UserRoleEnum.USER.getValue());
-        boolean saveResult = this.save(user);
+        boolean saveResult = userDAO.save(user);
         if (!saveResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败，数据库错误");
         }
@@ -100,7 +100,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("userAccount", userAccount);
         queryWrapper.eq("userPassword", encryptPassword);
-        User user = this.baseMapper.selectOne(queryWrapper);
+        User user = userDAO.getBaseMapper().selectOne(queryWrapper);
         // 用户不存在
         if (user == null) {
             log.info("user login failed, userAccount cannot match userPassword");
@@ -131,7 +131,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         // 从数据库查询（追求性能的话可以注释，直接返回上述结果）
         long userId = currentUser.getId();
-        currentUser = this.getById(userId);
+        currentUser = userDAO.getById(userId);
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
@@ -188,6 +188,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         queryWrapper.like(StrUtil.isNotBlank(userProfile), "userProfile", userProfile);
         queryWrapper.orderBy(StringUtils.isNoneBlank(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;
+    }
+
+    @Override
+    public boolean isAdmin(User user) {
+        return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
     }
 }
 

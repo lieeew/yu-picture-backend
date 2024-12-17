@@ -15,7 +15,7 @@ import java.util.List;
 * @description 针对表【user(用户)】的数据库操作Service
 * @createDate 2024-12-12 17:28:56
 */
-public interface UserService extends IService<User> {
+public interface UserService {
     /**
      * 用户注册
      *
@@ -64,12 +64,13 @@ public interface UserService extends IService<User> {
      * 用户注销
      *
      * @param request request
-     * @return  注销结果
+     * @return 注销结果
      */
     boolean userLogout(HttpServletRequest request);
 
     /**
      * 获取用户脱敏信息
+     *
      * @param user 脱敏前的信息
      * @return 脱敏后的信息
      */
@@ -77,6 +78,7 @@ public interface UserService extends IService<User> {
 
     /**
      * 批量获取用户脱敏信息
+     *
      * @param userList 脱敏前的信息
      * @return 脱敏后的 List 列表
      */
@@ -89,4 +91,13 @@ public interface UserService extends IService<User> {
      * @return 查询条件
      */
     QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
+
+    /**
+     * 是否为管理员
+     *
+     * @param user 当前登录的 user
+     * @return  是否是管理员 true 表示 是 、false 表示 否
+     */
+    boolean isAdmin(User user);
+
 }

@@ -1,6 +1,8 @@
 package com.leikooo.yupicturebackend.model.vo;
 
+import com.leikooo.yupicturebackend.model.entity.User;
 import lombok.Data;
+import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -44,4 +46,13 @@ public class UserVO implements Serializable {
     private Date createTime;
 
     private static final long serialVersionUID = 1L;
+
+    public static UserVO objToVo(User user) {
+        if (user == null) {
+            return null;
+        }
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO);
+        return userVO;
+    }
 }

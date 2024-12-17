@@ -5,12 +5,13 @@ import com.leikooo.yupicturebackend.annotation.AuthCheck;
 import com.leikooo.yupicturebackend.commen.BaseResponse;
 import com.leikooo.yupicturebackend.commen.DeleteRequest;
 import com.leikooo.yupicturebackend.commen.ResultUtils;
+import com.leikooo.yupicturebackend.dao.UserDAO;
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import com.leikooo.yupicturebackend.model.constant.UserConstant;
-import com.leikooo.yupicturebackend.model.dto.UserLoginRequest;
-import com.leikooo.yupicturebackend.model.dto.UserRegisterRequest;
+import com.leikooo.yupicturebackend.model.dto.user.UserLoginRequest;
+import com.leikooo.yupicturebackend.model.dto.user.UserRegisterRequest;
 import com.leikooo.yupicturebackend.model.dto.user.UserAddRequest;
 import com.leikooo.yupicturebackend.model.dto.user.UserQueryRequest;
 import com.leikooo.yupicturebackend.model.dto.user.UserUpdateRequest;
@@ -35,6 +36,9 @@ import java.util.List;
 public class UserController {
     @Resource
     private UserService userService;
+
+    @Resource
+    private UserDAO userDAO;
 
     /**
      * 用户注册
@@ -74,7 +78,7 @@ public class UserController {
         final String DEFAULT_PASSWORD = "12345678";
         String encryptPassword = userService.getEncryptPassword(DEFAULT_PASSWORD);
         user.setUserPassword(encryptPassword);
-        boolean result = userService.save(user);
+        boolean result = userDAO.save(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(user.getId());
     }
@@ -86,7 +90,7 @@ public class UserController {
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<User> getUserById(long id) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
-        User user = userService.getById(id);
+        User user = userDAO.getById(id);
         ThrowUtils.throwIf(user == null, ErrorCode.NOT_FOUND_ERROR);
         return ResultUtils.success(user);
     }
@@ -110,7 +114,7 @@ public class UserController {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        boolean b = userService.removeById(deleteRequest.getId());
+        boolean b = userDAO.removeById(deleteRequest.getId());
         return ResultUtils.success(b);
     }
 
@@ -135,7 +139,7 @@ public class UserController {
         }
         User user = new User();
         BeanUtils.copyProperties(userUpdateRequest, user);
-        boolean result = userService.updateById(user);
+        boolean result = userDAO.updateById(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -151,7 +155,7 @@ public class UserController {
         ThrowUtils.throwIf(userQueryRequest == null, ErrorCode.PARAMS_ERROR);
         long current = userQueryRequest.getCurrent();
         long pageSize = userQueryRequest.getPageSize();
-        Page<User> userPage = userService.page(new Page<>(current, pageSize),
+        Page<User> userPage = userDAO.page(new Page<>(current, pageSize),
                 userService.getQueryWrapper(userQueryRequest));
         Page<UserVO> userVOPage = new Page<>(current, pageSize, userPage.getTotal());
         List<UserVO> userVOList = userService.getUserVOList(userPage.getRecords());

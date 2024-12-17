@@ -5,6 +5,9 @@ server:
 spring:
   profiles:
     active: dev
+  servlet:
+    multipart:
+      max-file-size: 10MB
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${spring.datasource.url}
@@ -33,3 +36,12 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.leikooo.yupicturebackend.controller
+
+# 对象存储配置（需要从腾讯云获取）
+cos:
+  client:
+    host: ${cos.client.host}
+    secretId: ${cos.client.secretId}
+    secretKey: ${cos.client.secretKey}
+    region: ${cos.client.region}
+    bucket: ${cos.client.bucket}

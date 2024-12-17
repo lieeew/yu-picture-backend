@@ -1,9 +1,16 @@
 package com.leikooo.yupicturebackend;
 
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Map;
 
 /**
  * @author leikooo
@@ -16,5 +23,4 @@ public class YuPictureBackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(YuPictureBackendApplication.class, args);
     }
-
 }
