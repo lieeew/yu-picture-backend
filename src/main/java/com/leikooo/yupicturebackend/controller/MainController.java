@@ -6,9 +6,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 /**
  * @author leikooo
  */
@@ -20,10 +17,7 @@ public class MainController {
      * 健康检查
      */
     @GetMapping("/health")
-    public BaseResponse<String> health(HttpServletRequest request, HttpServletResponse response) {
-        System.out.println("request = " + request);
-        System.out.println("response = " + response);
-        String header = response.getHeader("X-Custom-Header");
+    public BaseResponse<String> health() {
         return ResultUtils.success("ok");
     }
 }

@@ -5,18 +5,20 @@ import com.qcloud.cos.COSClient;
 import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.PicOperations;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.io.File;
 
+/**
+ * @author <a href="https://github.com/lieeew">leikooo</a>
+ */
 @Component
+@AllArgsConstructor
 public class CosManager {
 
-    @Resource
     private CosClientConfig cosClientConfig;
 
-    @Resource
     private COSClient cosClient;
 
     /**

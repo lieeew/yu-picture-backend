@@ -10,19 +10,15 @@ import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import com.leikooo.yupicturebackend.model.constant.UserConstant;
-import com.leikooo.yupicturebackend.model.dto.user.UserLoginRequest;
-import com.leikooo.yupicturebackend.model.dto.user.UserRegisterRequest;
-import com.leikooo.yupicturebackend.model.dto.user.UserAddRequest;
-import com.leikooo.yupicturebackend.model.dto.user.UserQueryRequest;
-import com.leikooo.yupicturebackend.model.dto.user.UserUpdateRequest;
+import com.leikooo.yupicturebackend.model.dto.user.*;
 import com.leikooo.yupicturebackend.model.entity.User;
 import com.leikooo.yupicturebackend.model.vo.LoginUserVO;
 import com.leikooo.yupicturebackend.model.vo.UserVO;
 import com.leikooo.yupicturebackend.service.UserService;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
@@ -33,11 +29,10 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/user")
+@AllArgsConstructor
 public class UserController {
-    @Resource
     private UserService userService;
 
-    @Resource
     private UserDAO userDAO;
 
     /**

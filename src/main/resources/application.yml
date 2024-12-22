@@ -5,6 +5,8 @@ server:
 spring:
   profiles:
     active: dev
+  session:
+    store-type: redis
   servlet:
     multipart:
       max-file-size: 10MB
@@ -13,6 +15,10 @@ spring:
     url: ${spring.datasource.url}
     username: ${spring.datasource.username}
     password: ${spring.datasource.password}
+  redis:
+    password: ${spring.redis.password}
+    url: ${spring.redis.url}
+    database: ${spring.redis.database}
   application:
     name: yu-picture-backend
 mybatis-plus:

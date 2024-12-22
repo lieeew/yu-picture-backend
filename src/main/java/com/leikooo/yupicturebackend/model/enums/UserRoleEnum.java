@@ -1,10 +1,16 @@
 package com.leikooo.yupicturebackend.model.enums;
 
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableMap;
+import com.leikooo.yupicturebackend.exception.BusinessException;
+import com.leikooo.yupicturebackend.exception.ErrorCode;
+import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -21,17 +27,17 @@ public enum UserRoleEnum {
 
     private final String value;
 
+    private final static Map<String, UserRoleEnum> USER_ROLE_ENUM_MAP = ImmutableMap.copyOf(Arrays.stream(UserRoleEnum.values()).
+            collect(Collectors.toMap(UserRoleEnum::getValue, userRoleEnum -> userRoleEnum)));
+
     UserRoleEnum(String text, String value) {
         this.text = text;
         this.value = value;
     }
 
     public static UserRoleEnum getEnumByValue(String value) {
-        if (StringUtils.isBlank(value)) {
-            return null;
-        }
-        Map<String, UserRoleEnum> userRoleEnumMap = Arrays.stream(UserRoleEnum.values()).
-                collect(Collectors.toMap(UserRoleEnum::getValue, userRoleEnum -> userRoleEnum));
-        return userRoleEnumMap.getOrDefault(value, null);
+        UserRoleEnum userRoleEnum = value == null ? null : USER_ROLE_ENUM_MAP.getOrDefault(value, null);
+        ThrowUtils.throwIf(Objects.isNull(userRoleEnum), ErrorCode.PARAMS_ERROR, "角色不存在");
+        return userRoleEnum;
     }
 }

@@ -1,6 +1,8 @@
 package com.leikooo.yupicturebackend.dao;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.leikooo.yupicturebackend.exception.ErrorCode;
+import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import com.leikooo.yupicturebackend.mapper.PictureMapper;
 import com.leikooo.yupicturebackend.model.entity.Picture;
 import org.springframework.stereotype.Service;
@@ -12,9 +14,10 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class PictureDAO extends ServiceImpl<PictureMapper, Picture> {
-    public Picture getById(Long id) {
+    public Picture getByPictureId(Long id) {
+        ThrowUtils.throwIf(id == null, ErrorCode.PARAMS_ERROR);
         return this.query()
                 .eq("id", id)
-                .eq("isDeleted", 0).getEntity();
+                .eq("isDelete", 0).one();
     }
 }
