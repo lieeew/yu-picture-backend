@@ -16,7 +16,7 @@ import java.util.List;
  * @date 2024/12/21
  * @description
  */
-@Component
+@Component("file")
 public class FilePictureUpload extends PictureUploadTemplate {
 
     private final static List<String> ALLOW_FILE_TYPE = Arrays.asList("jpeg", "jpg", "png", "webp");

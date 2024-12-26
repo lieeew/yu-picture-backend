@@ -2,12 +2,8 @@ package com.leikooo.yupicturebackend.model.enums;
 
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
-import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import lombok.Getter;
 import lombok.NonNull;
-
-import javax.annotation.Nullable;
-import java.util.Objects;
 
 /**
  * @author <a href="https://github.com/lieeew">leikooo</a>

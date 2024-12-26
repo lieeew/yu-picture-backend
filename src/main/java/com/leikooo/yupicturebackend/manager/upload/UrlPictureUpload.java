@@ -22,7 +22,7 @@ import java.util.List;
  * @date 2024/12/21
  * @description
  */
-@Component
+@Component("url")
 public class UrlPictureUpload extends PictureUploadTemplate {
 
     private final static List<String> ALLOW_FILE_TYPE = Arrays.asList("image/png", "image/webp", "image/jpeg");

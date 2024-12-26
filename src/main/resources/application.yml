@@ -16,9 +16,9 @@ spring:
     username: ${spring.datasource.username}
     password: ${spring.datasource.password}
   redis:
-    password: ${spring.redis.password}
     url: ${spring.redis.url}
     database: ${spring.redis.database}
+    username: ${spring.redis.username}
   application:
     name: yu-picture-backend
 mybatis-plus:

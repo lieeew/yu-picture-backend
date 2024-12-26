@@ -93,7 +93,6 @@ public class PictureServiceImpl implements PictureService {
             picture = buildPicture(uploadPictureResult, oldPicture, loginUser.getId());
         }
         // 构造要入库的图片信息
-        picture.setUrl(uploadPictureResult.getUrl());
         String picName = uploadPictureResult.getPicName();
         if (StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
             picName = pictureUploadRequest.getPicName();
@@ -176,6 +175,7 @@ public class PictureServiceImpl implements PictureService {
                 .picWidth(result.getPicWidth())
                 .userId(userId)
                 .picSize(result.getPicSize())
+                .thumbnailUrl(result.getThumbnailUrl())
                 .build();
     }
 

@@ -24,13 +24,18 @@ public class Picture implements Serializable {
     /**
      * id
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /**
      * 图片 url
      */
     private String url;
+
+    /**
+     * 缩略图 url
+     */
+    private String thumbnailUrl;
 
     /**
      * 图片名称
@@ -81,6 +86,11 @@ public class Picture implements Serializable {
      * 创建用户 id
      */
     private Long userId;
+
+    /**
+     * 空间 id（为空表示公共空间）
+     */
+    private Long spaceId;
 
     /**
      * 状态：0-待审核; 1-通过; 2-拒绝

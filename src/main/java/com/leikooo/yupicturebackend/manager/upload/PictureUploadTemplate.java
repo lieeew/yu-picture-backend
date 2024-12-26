@@ -1,5 +1,6 @@
 package com.leikooo.yupicturebackend.manager.upload;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IORuntimeException;
@@ -10,17 +11,17 @@ import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.manager.CosManager;
 import com.leikooo.yupicturebackend.model.dto.file.UploadPictureResult;
 import com.qcloud.cos.model.PutObjectResult;
+import com.qcloud.cos.model.ciModel.persistence.CIObject;
+import com.qcloud.cos.model.ciModel.persistence.CIUploadResult;
 import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +32,6 @@ import java.util.Optional;
  * @date 2024-12-16 11:56:07
  */
 @Slf4j
-@Component
 public abstract class PictureUploadTemplate {
     @Resource
     private CosManager cosManager;
@@ -118,7 +118,38 @@ public abstract class PictureUploadTemplate {
     }
 
     private UploadPictureResult analyzeCosReturn(AnalyzeCosParams params) {
-        ImageInfo imageInfo = params.getPutObjectResult().getCiUploadResult().getOriginalInfo().getImageInfo();
+        PutObjectResult putObjectResult = params.getPutObjectResult();
+        CIUploadResult ciUploadResult = putObjectResult.getCiUploadResult();
+        ImageInfo imageInfo = ciUploadResult.getOriginalInfo().getImageInfo();
+        List<CIObject> objectList = ciUploadResult.getProcessResults().getObjectList();
+        if (CollUtil.isNotEmpty(objectList)) {
+            CIObject compressedCiObject = objectList.get(0);
+            // 缩略图默认等于压缩图
+            CIObject thumbnailCiObject = compressedCiObject;
+            // 有生成缩略图，才得到缩略图
+            if (objectList.size() > 1) {
+                thumbnailCiObject = objectList.get(1);
+            }
+            // 封装压缩图返回结果
+            return buildResult(params.getImageName(), compressedCiObject, thumbnailCiObject);
+        }
+        return buildResult(params, imageInfo);
+    }
+
+    private UploadPictureResult buildResult(String fileName, CIObject ciObject, CIObject thumbnailObject) {
+        return UploadPictureResult.builder()
+                .picFormat(ciObject.getFormat())
+                .picHeight(ciObject.getHeight())
+                .picWidth(ciObject.getWidth())
+                .picSize((long) ciObject.getQuality())
+                .picScale(NumberUtil.round(ciObject.getHeight() * 1.0 / ciObject.getWidth(), 2).doubleValue())
+                .picName(fileName)
+                .url(String.format("%s/%s", cosManager.getBaseUrl(), ciObject.getKey()))
+                .thumbnailUrl(String.format("%s/%s", cosManager.getBaseUrl(), thumbnailObject.getKey()))
+                .build();
+    }
+
+    private UploadPictureResult buildResult(AnalyzeCosParams params, ImageInfo imageInfo) {
         return UploadPictureResult.builder()
                 .picFormat(imageInfo.getFormat())
                 .picHeight(imageInfo.getHeight())

@@ -19,6 +19,12 @@ public class GlobalExceptionHandler {
         return ResultUtils.error(e.getCode(), e.getMessage());
     }
 
+    @ExceptionHandler(NullPointerException.class)
+    public BaseResponse<?> nullPointerExceptionHandler(NullPointerException e) {
+        log.error("BusinessException", e);
+        return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "空指针异常");
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public BaseResponse<?> runtimeExceptionHandler(RuntimeException e) {
         log.error("RuntimeException", e);

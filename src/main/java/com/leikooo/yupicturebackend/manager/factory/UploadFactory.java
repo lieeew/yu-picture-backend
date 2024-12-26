@@ -2,14 +2,14 @@ package com.leikooo.yupicturebackend.manager.factory;
 
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
-import com.leikooo.yupicturebackend.manager.upload.FilePictureUpload;
 import com.leikooo.yupicturebackend.manager.upload.PictureUploadTemplate;
-import com.leikooo.yupicturebackend.manager.upload.UrlPictureUpload;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author <a href="https://github.com/lieeew">leikooo</a>
@@ -19,22 +19,24 @@ import java.util.HashMap;
 @Component
 public class UploadFactory {
     @Resource
-    private FilePictureUpload filePictureUpload;
+    private List<PictureUploadTemplate> uploadPictureTemplates;
 
-    @Resource
-    private UrlPictureUpload urlPictureUpload;
-
-    private final HashMap<String, PictureUploadTemplate> UPLOAD_FACTORY = new HashMap<>(2);
+    private final HashMap<String, PictureUploadTemplate> uploadFactory = new HashMap<>(10);
 
     @PostConstruct
-    public void init() {
-        UPLOAD_FACTORY.put("file", filePictureUpload);
-        UPLOAD_FACTORY.put("url", urlPictureUpload);
+    private void init() {
+        // 初始化方便后面调用
+        uploadPictureTemplates.forEach(uploadTemplate -> {
+            Component annotation = uploadTemplate.getClass().getAnnotation(Component.class);
+            if (annotation != null && StringUtils.isNotBlank(annotation.value())) {
+                uploadFactory.put(annotation.value(), uploadTemplate);
+            }
+        });
     }
 
     public PictureUploadTemplate getUploadFactory(String type) {
-        PictureUploadTemplate uploadFactory = UPLOAD_FACTORY.get(type);
-        ThrowUtils.throwIf(uploadFactory == null, ErrorCode.PARAMS_ERROR, "上传类型错误");
-        return uploadFactory;
+        PictureUploadTemplate pictureUploadTemplate = uploadFactory.getOrDefault(type, null);
+        ThrowUtils.throwIf(pictureUploadTemplate == null, ErrorCode.NOT_FOUND_ERROR, "上传类型不存在");
+        return pictureUploadTemplate;
     }
 }
