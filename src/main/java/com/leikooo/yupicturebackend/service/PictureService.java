@@ -2,15 +2,10 @@ package com.leikooo.yupicturebackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.leikooo.yupicturebackend.model.dto.picture.PictureQueryRequest;
-import com.leikooo.yupicturebackend.model.dto.picture.PictureReviewRequest;
-import com.leikooo.yupicturebackend.model.dto.picture.PictureUploadByBatchRequest;
-import com.leikooo.yupicturebackend.model.dto.picture.PictureUploadRequest;
+import com.leikooo.yupicturebackend.model.dto.picture.*;
 import com.leikooo.yupicturebackend.model.entity.Picture;
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.leikooo.yupicturebackend.model.entity.User;
 import com.leikooo.yupicturebackend.model.vo.PictureVO;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -26,12 +21,10 @@ public interface PictureService {
      *
      * @param object        文件/url
      * @param pictureUploadRequest 请求类
-     * @param loginUser            当前登录的 user
      * @return picture 的封装对象
      */
     PictureVO uploadPicture(Object object,
-                            PictureUploadRequest pictureUploadRequest,
-                            User loginUser);
+                            PictureUploadWithUserDTO pictureUploadRequest);
 
     /**
      * 批量抓取和创建图片
@@ -94,4 +87,27 @@ public interface PictureService {
      * @param loginUser 登录的用户
      */
     void fillReviewParams(Picture picture, User loginUser);
+
+    /**
+     * 删除图片
+     *
+     * @param pictureId pictureId
+     * @param loginUser  登录的用户
+     */
+    void deletePicture(long pictureId, User loginUser);
+
+    /**
+     * 清理图片文件
+     *
+     * @param oldPicture
+     */
+    void clearPictureFile(Picture oldPicture);
+
+    /**
+     * 校验权限
+     *
+     * @param loginUser 登录的用户
+     * @param picture    图片
+     */
+    void checkPictureAuth(User loginUser, Picture picture);
 }

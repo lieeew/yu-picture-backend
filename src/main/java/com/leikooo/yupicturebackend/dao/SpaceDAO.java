@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
  * @description
  */
 @Service
-public class SpaceDAO  extends ServiceImpl<SpaceMapper, Space> {
-
+public class SpaceDAO extends ServiceImpl<SpaceMapper, Space> {
+    public boolean isExistSpaceByUserId(Long id) {
+        return this.lambdaQuery()
+                .eq(Space::getUserId, id).exists();
+    }
 }

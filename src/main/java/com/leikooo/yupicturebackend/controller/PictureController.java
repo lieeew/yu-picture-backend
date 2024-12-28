@@ -55,15 +55,12 @@ public class PictureController {
 
     private PictureDAO pictureDAO;
 
-    private StringRedisTemplate stringRedisTemplate;
-
     private final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
                     .maximumSize(10000L)
                     // 缓存 5 分钟移除
                     .expireAfterWrite(5L, TimeUnit.MINUTES)
                     .build();
-
 
     /**
      * 上传图片（可重新上传）
@@ -74,7 +71,8 @@ public class PictureController {
             PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
-        PictureVO pictureVO = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
+        PictureVO pictureVO = pictureService.uploadPicture(multipartFile,
+                pictureUploadRequest.toPictureUploadWithUserDTO(loginUser));
         return ResultUtils.success(pictureVO);
     }
 
@@ -87,7 +85,7 @@ public class PictureController {
             HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         String fileUrl = pictureUploadRequest.getFileUrl();
-        PictureVO pictureVO = pictureService.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
+        PictureVO pictureVO = pictureService.uploadPicture(fileUrl, pictureUploadRequest.toPictureUploadWithUserDTO(loginUser));
         return ResultUtils.success(pictureVO);
     }
 
@@ -283,7 +281,7 @@ public class PictureController {
         // 从本地缓存中查询
         String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
         if (cachedValue != null) {
-        // 如果缓存命中，返回结果
+            // 如果缓存命中，返回结果
             Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
             return ResultUtils.success(cachedPage);
         }

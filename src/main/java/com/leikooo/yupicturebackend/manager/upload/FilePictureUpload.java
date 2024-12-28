@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author <a href="https://github.com/lieeew">leikooo</a>
@@ -50,6 +51,6 @@ public class FilePictureUpload extends PictureUploadTemplate {
     @Override
     protected String getOriginFilename(Object object) {
         MultipartFile multipartFile = (MultipartFile) object;
-        return multipartFile.getOriginalFilename();
+        return Objects.requireNonNull(multipartFile.getOriginalFilename()).replaceAll(" ", "_");
     }
 }

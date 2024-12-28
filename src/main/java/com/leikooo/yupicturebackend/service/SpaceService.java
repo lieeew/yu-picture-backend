@@ -61,8 +61,6 @@ public interface SpaceService {
 
     /**
      * 根据空间级别填充空间对象
-     *
-     * @param space
      */
     void fillSpaceBySpaceLevel(Space space);
 }

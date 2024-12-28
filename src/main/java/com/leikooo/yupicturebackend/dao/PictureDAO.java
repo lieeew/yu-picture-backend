@@ -20,4 +20,10 @@ public class PictureDAO extends ServiceImpl<PictureMapper, Picture> {
                 .eq("id", id)
                 .eq("isDelete", 0).one();
     }
+
+    public Long getOneUrlCount(String pictureUrl) {
+        return this.lambdaQuery()
+                .eq(Picture::getUrl, pictureUrl)
+                .count();
+    }
 }

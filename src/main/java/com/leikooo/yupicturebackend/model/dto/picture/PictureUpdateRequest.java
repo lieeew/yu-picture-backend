@@ -1,6 +1,8 @@
 package com.leikooo.yupicturebackend.model.dto.picture;
 
+import com.leikooo.yupicturebackend.model.entity.User;
 import lombok.Data;
+import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
 import java.util.List;
@@ -32,6 +34,7 @@ public class PictureUpdateRequest implements Serializable {
      * 标签  
      */  
     private List<String> tags;
-  
-    private static final long serialVersionUID = 1L;  
+
+    private static final long serialVersionUID = 1L;
+
 }

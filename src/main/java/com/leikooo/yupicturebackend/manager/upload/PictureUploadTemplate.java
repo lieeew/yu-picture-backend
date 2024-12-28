@@ -49,8 +49,7 @@ public abstract class PictureUploadTemplate {
      */
     public UploadPictureResult uploadPicture(Object obj, String uploadPathPrefix) {
         checkParamSource(obj);
-        String templatePath = System.getProperty("user.dir") +
-                File.separator + getOriginFilename(obj);
+        String templatePath = System.getProperty("user.dir") + File.separator + getOriginFilename(obj);
         File tempFile = new File(templatePath);
         File file = processFile(obj, tempFile);
         // 上传文件

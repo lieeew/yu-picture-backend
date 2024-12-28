@@ -1,6 +1,7 @@
 package com.leikooo.yupicturebackend.model.enums;
 
 import cn.hutool.core.util.ObjUtil;
+import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import lombok.Getter;
@@ -41,12 +42,12 @@ public enum SpaceLevelEnum {
      * 根据 value 获取枚举
      */
     public static SpaceLevelEnum getEnumByValue(Integer value) {
-        ThrowUtils.throwIf(ObjUtil.isEmpty(value), ErrorCode.PARAMS_ERROR, "space level 不存在");
+        ThrowUtils.throwIf(ObjUtil.isEmpty(value), ErrorCode.PARAMS_ERROR, "空间级别不存在");
         for (SpaceLevelEnum spaceLevelEnum : SpaceLevelEnum.values()) {
             if (spaceLevelEnum.value == value) {
                 return spaceLevelEnum;
             }
         }
-        return null;
+        throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间级别不存在");
     }
 }

@@ -1,5 +1,6 @@
 package com.leikooo.yupicturebackend;
 
+import com.leikooo.yupicturebackend.manager.CosManager;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.EnableAsync;
 
+import javax.annotation.Resource;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
@@ -24,4 +26,5 @@ public class YuPictureBackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(YuPictureBackendApplication.class, args);
     }
+
 }

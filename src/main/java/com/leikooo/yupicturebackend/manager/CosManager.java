@@ -72,4 +72,13 @@ public class CosManager {
     public String getBaseUrl() {
         return cosClientConfig.getHost();
     }
+
+    /**
+     * 删除对象
+     *
+     * @param key 唯一键
+     */
+    public void deleteObject(String key) {
+        cosClient.deleteObject(cosClientConfig.getBucket(), key);
+    }
 }

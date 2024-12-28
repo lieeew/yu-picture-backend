@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NullPointerException.class)
     public BaseResponse<?> nullPointerExceptionHandler(NullPointerException e) {
         log.error("BusinessException", e);
-        return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "空指针异常");
+        return ResultUtils.error(ErrorCode.PARAMS_ERROR);
     }
 
     @ExceptionHandler(RuntimeException.class)

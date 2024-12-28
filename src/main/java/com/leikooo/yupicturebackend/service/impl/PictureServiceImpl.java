@@ -1,23 +1,24 @@
 package com.leikooo.yupicturebackend.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.thread.NamedThreadFactory;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.leikooo.yupicturebackend.dao.PictureDAO;
+import com.leikooo.yupicturebackend.dao.SpaceDAO;
 import com.leikooo.yupicturebackend.dao.UserDAO;
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
+import com.leikooo.yupicturebackend.manager.CosManager;
 import com.leikooo.yupicturebackend.manager.factory.UploadFactory;
 import com.leikooo.yupicturebackend.manager.upload.PictureUploadTemplate;
 import com.leikooo.yupicturebackend.model.dto.file.UploadPictureResult;
-import com.leikooo.yupicturebackend.model.dto.picture.PictureQueryRequest;
-import com.leikooo.yupicturebackend.model.dto.picture.PictureReviewRequest;
-import com.leikooo.yupicturebackend.model.dto.picture.PictureUploadByBatchRequest;
-import com.leikooo.yupicturebackend.model.dto.picture.PictureUploadRequest;
+import com.leikooo.yupicturebackend.model.dto.picture.*;
 import com.leikooo.yupicturebackend.model.entity.Picture;
+import com.leikooo.yupicturebackend.model.entity.Space;
 import com.leikooo.yupicturebackend.model.entity.User;
 import com.leikooo.yupicturebackend.model.enums.FileUploadEnum;
 import com.leikooo.yupicturebackend.model.enums.PictureReviewStatusEnum;
@@ -28,20 +29,24 @@ import com.leikooo.yupicturebackend.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -54,56 +59,126 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class PictureServiceImpl implements PictureService {
 
-    private PictureDAO pictureDAO;
+    private final PictureDAO pictureDAO;
 
-    private UserDAO userDAO;
+    private final UserDAO userDAO;
 
-    private UserService userService;
+    private final UserService userService;
 
-    private UploadFactory uploadFactory;
+    private final UploadFactory uploadFactory;
+
+    private final SpaceDAO spaceDAO;
+
+    private final CosManager cosManager;
+
+
+    private final Executor executor = new ThreadPoolExecutor(1, 1, 2L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("picture-service-del", false));
 
     /**
      * 上传图片接口
      *
      * @param object               文件/url
      * @param pictureUploadRequest 请求类
-     * @param loginUser            当前登录的 user
      * @return picture 的封装对象
      */
     @Override
-    public PictureVO uploadPicture(Object object, PictureUploadRequest pictureUploadRequest, User loginUser) {
-        checkParam(pictureUploadRequest, loginUser, object);
+    public PictureVO uploadPicture(Object object, PictureUploadWithUserDTO pictureUploadRequest) {
+        checkParam(pictureUploadRequest, object);
+        User loginUser = pictureUploadRequest.getUser();
+        Long spaceId = getSpaceIdAndCheck(pictureUploadRequest);
         Long pictureId = pictureUploadRequest.getId();
         PictureUploadTemplate uploadTemplate = uploadFactory.getUploadFactory(object instanceof MultipartFile ? FileUploadEnum.FILE.getType() : FileUploadEnum.URL.getType());
-        String uploadPathPrefix = String.format("public/%s", loginUser.getId());
+        String uploadPathPrefix = Objects.nonNull(spaceId) ? String.format("space/%s", spaceId) : String.format("public/%s", loginUser.getId());
         UploadPictureResult uploadPictureResult = uploadTemplate.uploadPicture(object, uploadPathPrefix);
         Picture picture = new Picture();
         if (pictureId == null) {
             // 新增
-            picture = buildPicture(uploadPictureResult, null, loginUser.getId());
+            picture = buildPicture(uploadPictureResult, null, pictureUploadRequest);
         }
         if (pictureId != null) {
             // 更新
-            Picture oldPicture = pictureDAO.getByPictureId(pictureId);
-            ThrowUtils.throwIf(ObjectUtils.isEmpty(oldPicture), ErrorCode.NOT_FOUND_ERROR, "图片不存在");
-            // 校验权限 如果不是自己或者 admin 就抛出异常
-            if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-                throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-            }
-            picture = buildPicture(uploadPictureResult, oldPicture, loginUser.getId());
+            Picture updatePicture = buildUpdatePicture(loginUser, pictureId, spaceId);
+            picture = buildPicture(uploadPictureResult, updatePicture, pictureUploadRequest);
         }
-        // 构造要入库的图片信息
-        String picName = uploadPictureResult.getPicName();
-        if (StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
-            picName = pictureUploadRequest.getPicName();
+        // 补充审核参数空间图片不需要校验
+        if (Objects.nonNull(spaceId)) {
+            this.fillReviewParams(picture, loginUser);
         }
-        picture.setName(picName);
-        // 补充审核参数
-        this.fillReviewParams(picture, loginUser);
         // 更新或者插入
         ThrowUtils.throwIf(!pictureDAO.saveOrUpdate(picture), ErrorCode.SYSTEM_ERROR, "保存失败");
         return PictureVO.objToVo(picture);
     }
+
+    /**
+     * 是否上传到 space 空间
+     *
+     * @param pictureUploadRequest dto 封装类 包含 user
+     * @return spaceId 如果是 null 就表示不上传到 space
+     */
+    private Long getSpaceIdAndCheck(PictureUploadWithUserDTO pictureUploadRequest) {
+        User loginUser = pictureUploadRequest.getUser();
+        Long spaceId = pictureUploadRequest.getSpaceId();
+        Long spaceIdOfPicture = null;
+        // 校验空间是否存在并且是否有权限上传/修改
+        if (spaceId != null) {
+            Space space = spaceDAO.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+            // 必须空间创建人（管理员）才能上传
+            ThrowUtils.throwIf(!space.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR, "空间创建人才能上传图片");
+            spaceIdOfPicture = spaceId;
+        }
+        if (Objects.isNull(spaceIdOfPicture) && pictureUploadRequest.getId() != null) {
+            Picture picture = pictureDAO.getByPictureId(pictureUploadRequest.getId());
+            ThrowUtils.throwIf(Objects.isNull(picture), ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+            if (Objects.isNull(picture.getSpaceId())) {
+                return null;
+            }
+            spaceIdOfPicture = picture.getSpaceId();
+        }
+        return spaceIdOfPicture;
+    }
+
+    private Picture buildUpdatePicture(User loginUser, Long pictureId, Long spaceId) {
+        Picture oldPicture = pictureDAO.getByPictureId(pictureId);
+        ThrowUtils.throwIf(ObjectUtils.isEmpty(oldPicture), ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+        // 校验权限 如果不是自己或者 admin 就抛出异常
+        if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+        // 校验空间
+        if (Objects.isNull(spaceId) && Objects.nonNull(oldPicture.getSpaceId())) {
+             return oldPicture;
+        }
+        if (Objects.nonNull(spaceId) && !Objects.equals(spaceId, oldPicture.getSpaceId())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间 id 不匹配");
+        }
+        return oldPicture;
+    }
+
+    private Picture buildPicture(UploadPictureResult result, Picture oldPicture, PictureUploadWithUserDTO pictureUploadWithUserDTO) {
+        return Picture.builder()
+                .id(oldPicture != null ? oldPicture.getId() : null)
+                .editTime(oldPicture != null ? new Date() : null)
+                .spaceId(oldPicture != null && oldPicture.getSpaceId() != null || pictureUploadWithUserDTO.getSpaceId() != null ? oldPicture == null ? pictureUploadWithUserDTO.getSpaceId() : oldPicture.getSpaceId() : null)
+                .url(result.getUrl())
+                .name(StringUtils.isNotBlank(pictureUploadWithUserDTO.getPicName()) ? pictureUploadWithUserDTO.getPicName() : result.getPicName())
+                .picScale(result.getPicScale())
+                .picFormat(result.getPicFormat())
+                .picHeight(result.getPicHeight())
+                .picWidth(result.getPicWidth())
+                .userId(pictureUploadWithUserDTO.getUser().getId())
+                .picSize(result.getPicSize())
+                .thumbnailUrl(result.getThumbnailUrl())
+                .build();
+    }
+
+
+    private void checkParam(PictureUploadWithUserDTO pictureUploadRequest, Object object) {
+        if (pictureUploadRequest == null || object == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+    }
+
 
     @Override
     public Integer uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser) {
@@ -148,7 +223,7 @@ public class PictureServiceImpl implements PictureService {
                 pictureUploadRequest.setPicName(namePrefix + (uploadCount + 1));
             }
             try {
-                PictureVO pictureVO = this.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
+                PictureVO pictureVO = this.uploadPicture(fileUrl, pictureUploadRequest.toPictureUploadWithUserDTO(loginUser));
                 log.info("图片上传成功, id = {}", pictureVO.getId());
                 uploadCount++;
             } catch (Exception e) {
@@ -161,33 +236,6 @@ public class PictureServiceImpl implements PictureService {
         }
         return uploadCount;
     }
-
-
-    private Picture buildPicture(UploadPictureResult result, Picture oldPicture, Long userId) {
-        return Picture.builder()
-                .id(oldPicture != null ? oldPicture.getId() : null)
-                .editTime(oldPicture != null ? new Date() : null)
-                .url(result.getUrl())
-                .name(result.getPicName())
-                .picScale(result.getPicScale())
-                .picFormat(result.getPicFormat())
-                .picHeight(result.getPicHeight())
-                .picWidth(result.getPicWidth())
-                .userId(userId)
-                .picSize(result.getPicSize())
-                .thumbnailUrl(result.getThumbnailUrl())
-                .build();
-    }
-
-    private void checkParam(PictureUploadRequest pictureUploadRequest, User loginUser, Object object) {
-        if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
-        }
-        if (pictureUploadRequest == null || object == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-    }
-
 
     @Override
     public QueryWrapper<Picture> getQueryWrapper(PictureQueryRequest pictureQueryRequest) {
@@ -342,6 +390,58 @@ public class PictureServiceImpl implements PictureService {
             picture.setReviewStatus(PictureReviewStatusEnum.REVIEWING.getValue());
         }
     }
+
+    @Override
+    public void deletePicture(long pictureId, User loginUser) {
+        ThrowUtils.throwIf(pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        // 判断是否存在
+        Picture oldPicture = pictureDAO.getById(pictureId);
+        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        // 校验权限
+        checkPictureAuth(loginUser, oldPicture);
+        // 操作数据库
+        boolean result = pictureDAO.removeById(pictureId);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        // 异步清理文件
+        this.clearPictureFile(oldPicture);
+    }
+
+    @Async
+    @Override
+    public void clearPictureFile(Picture oldPicture) {
+        // 判断改图片是否被多条记录使用
+        String pictureUrl = oldPicture.getUrl();
+        long count = pictureDAO.getOneUrlCount(pictureUrl);
+        // 有不止一条记录用到了该图片，不清理
+        if (count > 1) {
+            return;
+        }
+        // 删除图片
+        cosManager.deleteObject(pictureUrl);
+        // 删除缩略图
+        String thumbnailUrl = oldPicture.getThumbnailUrl();
+        if (StrUtil.isNotBlank(thumbnailUrl)) {
+            cosManager.deleteObject(thumbnailUrl);
+        }
+    }
+
+    @Override
+    public void checkPictureAuth(User loginUser, Picture picture) {
+        Long spaceId = picture.getSpaceId();
+        if (spaceId == null) {
+            // 公共图库，仅本人或管理员可操作
+            if (!picture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+            }
+        } else {
+            // 私有空间，仅空间管理员可操作
+            if (!picture.getUserId().equals(loginUser.getId())) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+            }
+        }
+    }
+
 }
 
 
