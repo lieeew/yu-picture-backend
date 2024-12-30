@@ -3,6 +3,7 @@ package com.leikooo.yupicturebackend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.leikooo.yupicturebackend.model.dto.space.SpaceAddRequest;
+import com.leikooo.yupicturebackend.model.dto.space.SpaceDeleteRequest;
 import com.leikooo.yupicturebackend.model.dto.space.SpaceQueryRequest;
 import com.leikooo.yupicturebackend.model.entity.Space;
 import com.leikooo.yupicturebackend.model.entity.User;
@@ -32,6 +33,15 @@ public interface SpaceService {
      * @param add   是否为创建时检验
      */
     void validSpace(Space space, boolean add);
+
+    /**
+     * 删除空间
+     *
+     * @param spaceDeleteRequest spaceId
+     * @param loginUser 登录用户
+     * @return boolean true 删除成功 、false 删除失败
+     */
+    boolean deleteSpace(SpaceDeleteRequest spaceDeleteRequest, User loginUser);
 
     /**
      * 获取空间包装类（单条）

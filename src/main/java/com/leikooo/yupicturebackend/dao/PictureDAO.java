@@ -7,6 +7,8 @@ import com.leikooo.yupicturebackend.mapper.PictureMapper;
 import com.leikooo.yupicturebackend.model.entity.Picture;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * @author <a href="https://github.com/lieeew">leikooo</a>
  * @date 2024/12/16
@@ -25,5 +27,15 @@ public class PictureDAO extends ServiceImpl<PictureMapper, Picture> {
         return this.lambdaQuery()
                 .eq(Picture::getUrl, pictureUrl)
                 .count();
+    }
+
+    public List<Picture> getListPageBySpaceId(Long spaceId, Long userId) {
+        return this.lambdaQuery().eq(Picture::getSpaceId, spaceId)
+                .eq(Picture::getUserId, userId)
+                .eq(Picture::getIsDelete, 0).list();
+    }
+
+    public void deleteBatchIds(List<Long> list) {
+        this.removeByIds(list);
     }
 }

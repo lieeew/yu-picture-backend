@@ -16,4 +16,28 @@ public class SpaceDAO extends ServiceImpl<SpaceMapper, Space> {
         return this.lambdaQuery()
                 .eq(Space::getUserId, id).exists();
     }
+
+    public boolean updateUsage(Long spaceId, Long picSize) {
+        return this.lambdaUpdate()
+                .eq(Space::getId, spaceId)
+                .setSql("totalSize = totalSize + " + picSize)
+                .setSql("totalCount = totalCount + 1")
+                .update();
+    }
+
+    public boolean delPictureUpdateSpaceUsage(Long spaceId, Long picSize) {
+        return this.lambdaUpdate()
+                .eq(Space::getId, spaceId)
+                .setSql("totalSize = totalSize - " + picSize)
+                .setSql("totalCount = totalCount - 1")
+                .update();
+    }
+
+    public Space getSpaceByUserIdAndSpaceId(Long spaceId, Long loginUserId) {
+        return this.lambdaQuery()
+                .eq(Space::getUserId, loginUserId)
+                .eq(Space::getId, spaceId)
+                .eq(Space::getIsDelete, 0)
+                .one();
+    }
 }

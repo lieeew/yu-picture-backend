@@ -9,6 +9,7 @@ import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import com.leikooo.yupicturebackend.model.constant.UserConstant;
 import com.leikooo.yupicturebackend.model.dto.space.SpaceAddRequest;
+import com.leikooo.yupicturebackend.model.dto.space.SpaceDeleteRequest;
 import com.leikooo.yupicturebackend.model.dto.space.SpaceUpdateRequest;
 import com.leikooo.yupicturebackend.model.entity.Space;
 import com.leikooo.yupicturebackend.model.entity.User;
@@ -70,5 +71,13 @@ public class SpaceController {
         User loginUser = userService.getLoginUser(request);
         long spaceId = spaceService.addSpace(spaceAddRequest, loginUser);
         return ResultUtils.success(spaceId);
+    }
+
+    @PostMapping("/delete")
+    public BaseResponse<Boolean> deleteSpace(@RequestBody SpaceDeleteRequest spaceDeleteRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceDeleteRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(!spaceService.deleteSpace(spaceDeleteRequest, loginUser), ErrorCode.SYSTEM_ERROR, "删除失败");
+        return ResultUtils.success(true);
     }
 }

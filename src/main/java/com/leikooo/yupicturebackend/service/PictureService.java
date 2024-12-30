@@ -19,7 +19,7 @@ public interface PictureService {
     /**
      * 上传图片
      *
-     * @param object        文件/url
+     * @param object               文件/url
      * @param pictureUploadRequest 请求类
      * @return picture 的封装对象
      */
@@ -30,7 +30,7 @@ public interface PictureService {
      * 批量抓取和创建图片
      *
      * @param pictureUploadByBatchRequest pictureUploadByBatchRequest
-     * @param loginUser 登录的用户
+     * @param loginUser                   登录的用户
      * @return 成功创建的图片数
      */
     Integer uploadPictureByBatch(
@@ -92,14 +92,14 @@ public interface PictureService {
      * 删除图片
      *
      * @param pictureId pictureId
-     * @param loginUser  登录的用户
+     * @param loginUser 登录的用户
      */
     void deletePicture(long pictureId, User loginUser);
 
     /**
      * 清理图片文件
      *
-     * @param oldPicture
+     * @param oldPicture oldPicture
      */
     void clearPictureFile(Picture oldPicture);
 
@@ -107,7 +107,15 @@ public interface PictureService {
      * 校验权限
      *
      * @param loginUser 登录的用户
-     * @param picture    图片
+     * @param picture   图片
      */
     void checkPictureAuth(User loginUser, Picture picture);
+
+    /**
+     * 编辑图片
+     *
+     * @param pictureEditRequest 图片编辑请求
+     * @param loginUser          登录的用户
+     */
+    void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
 }

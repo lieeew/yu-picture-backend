@@ -11,10 +11,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
-* @author liang
-* @description 针对表【user(用户)】的数据库操作Service
-* @createDate 2024-12-12 17:28:56
-*/
+ * @author liang
+ * @description 针对表【user(用户)】的数据库操作Service
+ * @createDate 2024-12-12 17:28:56
+ */
 public interface UserService {
     /**
      * 用户注册
@@ -96,7 +96,7 @@ public interface UserService {
      * 是否为管理员
      *
      * @param user 当前登录的 user
-     * @return  是否是管理员 true 表示 是 、false 表示 否
+     * @return 是否是管理员 true 表示 是 、false 表示 否
      */
     boolean isAdmin(User user);
 

@@ -1,6 +1,5 @@
 package com.leikooo.yupicturebackend.controller;
 
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -10,14 +9,18 @@ import com.leikooo.yupicturebackend.commen.BaseResponse;
 import com.leikooo.yupicturebackend.commen.DeleteRequest;
 import com.leikooo.yupicturebackend.commen.ResultUtils;
 import com.leikooo.yupicturebackend.dao.PictureDAO;
+import com.leikooo.yupicturebackend.dao.SpaceDAO;
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import com.leikooo.yupicturebackend.model.constant.UserConstant;
 import com.leikooo.yupicturebackend.model.dto.picture.*;
+import com.leikooo.yupicturebackend.model.dto.space.SpaceLevel;
 import com.leikooo.yupicturebackend.model.entity.Picture;
+import com.leikooo.yupicturebackend.model.entity.Space;
 import com.leikooo.yupicturebackend.model.entity.User;
 import com.leikooo.yupicturebackend.model.enums.PictureReviewStatusEnum;
+import com.leikooo.yupicturebackend.model.enums.SpaceLevelEnum;
 import com.leikooo.yupicturebackend.model.vo.PictureTagCategory;
 import com.leikooo.yupicturebackend.model.vo.PictureVO;
 import com.leikooo.yupicturebackend.service.PictureService;
@@ -25,8 +28,6 @@ import com.leikooo.yupicturebackend.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +38,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="https://github.com/lieeew">leikooo</a>
@@ -54,6 +56,8 @@ public class PictureController {
     private PictureService pictureService;
 
     private PictureDAO pictureDAO;
+
+    private SpaceDAO spaceDAO;
 
     private final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
@@ -110,17 +114,7 @@ public class PictureController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
-        long id = deleteRequest.getId();
-        // 判断是否存在
-        Picture oldPicture = pictureDAO.getByPictureId(id);
-        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        // 仅本人或管理员可删除
-        if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
-        // 操作数据库
-        boolean result = pictureDAO.removeById(id);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        pictureService.deletePicture(deleteRequest.getId(), loginUser);
         return ResultUtils.success(true);
     }
 
@@ -174,8 +168,15 @@ public class PictureController {
     public BaseResponse<PictureVO> getPictureVOById(long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         // 查询数据库
-        Picture picture = pictureDAO.getByPictureId(id);
+        // 查询数据库
+        Picture picture = pictureDAO.getById(id);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
+        // 空间权限校验
+        Long spaceId = picture.getSpaceId();
+        if (spaceId != null) {
+            User loginUser = userService.getLoginUser(request);
+            pictureService.checkPictureAuth(loginUser, picture);
+        }
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVO(picture, request));
     }
@@ -204,13 +205,40 @@ public class PictureController {
         long size = pictureQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-        // 默认只查询过审
-        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        // 空间权限校验
+        Long spaceId = pictureQueryRequest.getSpaceId();
+        // 公开图库
+        if (spaceId == null) {
+            // 普通用户默认只能查看已过审的公开数据
+            pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+            pictureQueryRequest.setNullSpaceId(true);
+        } else {
+            // 私有空间
+            User loginUser = userService.getLoginUser(request);
+            Space space = spaceDAO.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+            if (!loginUser.getId().equals(space.getUserId())) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
+            }
+        }
         // 查询数据库
         Page<Picture> picturePage = pictureDAO.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
+    }
+
+    @GetMapping("/list/level")
+    public BaseResponse<List<SpaceLevel>> listSpaceLevel() {
+        // 获取所有枚举
+        List<SpaceLevel> spaceLevelList = Arrays.stream(SpaceLevelEnum.values())
+                .map(spaceLevelEnum -> new SpaceLevel(
+                        spaceLevelEnum.getValue(),
+                        spaceLevelEnum.getText(),
+                        spaceLevelEnum.getMaxCount(),
+                        spaceLevelEnum.getMaxSize()))
+                .collect(Collectors.toList());
+        return ResultUtils.success(spaceLevelList);
     }
 
     /**

@@ -31,30 +31,30 @@ public class MainController {
         return ResultUtils.success("ok");
     }
 
-    @GetMapping("/test")
-    public Object asyncCall() throws InterruptedException {
-        System.out.println("before....");
-        ((MainController)(AopContext.currentProxy())).testAsyncTask();
-        System.out.println("after....");
-        return "OK";
-    }
-
-    @Async
-    public void testAsyncTask() throws InterruptedException {
-        Thread.sleep(10000);
-        System.out.println("异步任务执行完成！");
-    }
-
-    protected CompletableFuture<String> doSupplyAsyncUsingHelper() {
-        return asyncHelper.supplyAsync(() -> {
-            try {
-                testAsyncTask();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            return "Something";
-        });
-    }
+//    @GetMapping("/test")
+//    public Object asyncCall() throws InterruptedException {
+//        System.out.println("before....");
+//        ((MainController)(AopContext.currentProxy())).testAsyncTask();
+//        System.out.println("after....");
+//        return "OK";
+//    }
+//
+//    @Async
+//    public void testAsyncTask() throws InterruptedException {
+//        Thread.sleep(10000);
+//        System.out.println("异步任务执行完成！");
+//    }
+//
+//    protected CompletableFuture<String> doSupplyAsyncUsingHelper() {
+//        return asyncHelper.supplyAsync(() -> {
+//            try {
+//                testAsyncTask();
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//            return "Something";
+//        });
+//    }
 
 //    protected void doRunAsyncUsingHelper() {
 //        asyncHelper.runAsync(() -> {

@@ -2,11 +2,15 @@ package com.leikooo.yupicturebackend.model.vo;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
 @Data
 public class LoginUserVO implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 2431998231193919477L;
 
     /**
      * 用户 id
@@ -48,5 +52,4 @@ public class LoginUserVO implements Serializable {
      */
     private Date updateTime;
 
-    private static final long serialVersionUID = 1L;
 }

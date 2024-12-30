@@ -22,7 +22,6 @@ import javax.servlet.http.HttpServletRequest;
  * @author <a href="https://github.com/lieeew">leikooo</a>
  */
 @Aspect
-@Component
 public class AuthInterceptor {
 
     @Resource
