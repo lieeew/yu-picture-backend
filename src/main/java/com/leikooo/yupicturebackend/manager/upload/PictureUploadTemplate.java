@@ -10,6 +10,7 @@ import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.manager.CosManager;
 import com.leikooo.yupicturebackend.model.dto.file.UploadPictureResult;
+import com.leikooo.yupicturebackend.model.entity.Urls;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.CIObject;
 import com.qcloud.cos.model.ciModel.persistence.CIUploadResult;
@@ -122,20 +123,38 @@ public abstract class PictureUploadTemplate {
         ImageInfo imageInfo = ciUploadResult.getOriginalInfo().getImageInfo();
         List<CIObject> objectList = ciUploadResult.getProcessResults().getObjectList();
         if (CollUtil.isNotEmpty(objectList)) {
-            CIObject compressedCiObject = objectList.get(0);
-            // 缩略图默认等于压缩图
-            CIObject thumbnailCiObject = compressedCiObject;
-            // 有生成缩略图，才得到缩略图
-            if (objectList.size() > 1) {
-                thumbnailCiObject = objectList.get(1);
-            }
-            // 封装压缩图返回结果
-            return buildResult(params.getImageName(), compressedCiObject, thumbnailCiObject);
+            return getUploadPictureResult(params, objectList, imageInfo);
         }
         return buildResult(params, imageInfo);
     }
 
-    private UploadPictureResult buildResult(String fileName, CIObject ciObject, CIObject thumbnailObject) {
+    private UploadPictureResult getUploadPictureResult(AnalyzeCosParams params, List<CIObject> objectList, ImageInfo imageInfo) {
+        CIObject compressedCiObject = objectList.get(0);
+        String baseUrl = cosManager.getBaseUrl();
+        // 设置 url
+        Urls urls = new Urls();
+        // 公共字段
+        urls.setOriginalUrl(String.format("%s/%s", baseUrl, params.getImagePath()));
+        urls.setUrl(String.format("%s/%s", baseUrl, compressedCiObject.getKey()));
+        if (objectList.size() > 1) {
+            // 压缩图 webp 格式
+            urls.setThumbnailUrl(String.format("%s/%s", baseUrl, objectList.get(1).getKey()));
+        } else {
+            // 没有压缩图片的时候，缩略图默认等于压缩图
+            urls.setThumbnailUrl(String.format("%s/%s", baseUrl, compressedCiObject.getKey()));
+        }
+        if (objectList.size() > 2) {
+            // 涉及到转化成 png 逻辑，转换后的 url
+            urls.setTransferUrl(String.format("%s/%s", baseUrl, objectList.get(2).getKey()));
+        }
+        UploadPictureResult uploadPictureResult = buildResult(params.getImageName(), compressedCiObject);
+        uploadPictureResult.setUrls(urls);
+        // 设置颜色
+        uploadPictureResult.setPicColor(imageInfo.getAve());
+        return uploadPictureResult;
+    }
+
+    private UploadPictureResult buildResult(String fileName, CIObject ciObject) {
         return UploadPictureResult.builder()
                 .picFormat(ciObject.getFormat())
                 .picHeight(ciObject.getHeight())
@@ -143,12 +162,15 @@ public abstract class PictureUploadTemplate {
                 .picSize((long) ciObject.getQuality())
                 .picScale(NumberUtil.round(ciObject.getHeight() * 1.0 / ciObject.getWidth(), 2).doubleValue())
                 .picName(fileName)
-                .url(String.format("%s/%s", cosManager.getBaseUrl(), ciObject.getKey()))
-                .thumbnailUrl(String.format("%s/%s", cosManager.getBaseUrl(), thumbnailObject.getKey()))
+                //.url(String.format("%s/%s", cosManager.getBaseUrl(), ciObject.getKey()))
+                // .thumbnailUrl(String.format("%s/%s", cosManager.getBaseUrl(), thumbnailObject.getKey()))
                 .build();
     }
 
     private UploadPictureResult buildResult(AnalyzeCosParams params, ImageInfo imageInfo) {
+        Urls urls = Urls.builder()
+                .url(String.format("%s/%s", cosManager.getBaseUrl(), params.getImagePath()))
+                .build();
         return UploadPictureResult.builder()
                 .picFormat(imageInfo.getFormat())
                 .picHeight(imageInfo.getHeight())
@@ -156,7 +178,8 @@ public abstract class PictureUploadTemplate {
                 .picSize((long) imageInfo.getQuality())
                 .picScale(NumberUtil.round(imageInfo.getHeight() * 1.0 / imageInfo.getWidth(), 2).doubleValue())
                 .picName(params.getImageName())
-                .url(String.format("%s/%s", cosManager.getBaseUrl(), params.getImagePath()))
+                .urls(urls)
+                .picColor(imageInfo.getAve())
                 .build();
     }
 

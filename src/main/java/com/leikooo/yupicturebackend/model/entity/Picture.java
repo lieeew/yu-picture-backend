@@ -1,41 +1,39 @@
 package com.leikooo.yupicturebackend.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import lombok.*;
 
 import java.io.Serializable;
 import java.util.Date;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
  * 图片
- *
  * @TableName picture
  */
-@TableName(value = "picture")
+@TableName(value ="picture", autoResultMap = true)
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Picture implements Serializable {
     /**
      * id
      */
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 图片 url
+     * 空间 id（为空表示公共空间）
      */
-    private String url;
+    private Long spaceId;
 
     /**
-     * 缩略图 url
+     * 用户 URL 信息 (url, thumbnailUrl, originalUrl, transferUrl)
      */
-    private String thumbnailUrl;
+    @TableField(value = "urls", typeHandler = JacksonTypeHandler.class)
+    private Urls urls;
 
     /**
      * 图片名称
@@ -51,6 +49,12 @@ public class Picture implements Serializable {
      * 分类
      */
     private String category;
+
+
+    /**
+     * 图片主色调
+     */
+    private String picColor;
 
     /**
      * 标签（JSON 数组）
@@ -88,31 +92,6 @@ public class Picture implements Serializable {
     private Long userId;
 
     /**
-     * 空间 id（为空表示公共空间）
-     */
-    private Long spaceId;
-
-    /**
-     * 状态：0-待审核; 1-通过; 2-拒绝
-     */
-    private Integer reviewStatus;
-
-    /**
-     * 审核信息
-     */
-    private String reviewMessage;
-
-    /**
-     * 审核人 id
-     */
-    private Long reviewerId;
-
-    /**
-     * 审核时间
-     */
-    private Date reviewTime;
-
-    /**
      * 创建时间
      */
     private Date createTime;
@@ -132,6 +111,26 @@ public class Picture implements Serializable {
      */
     @TableLogic
     private Integer isDelete;
+
+    /**
+     * 审核状态：0-待审核; 1-通过; 2-拒绝
+     */
+    private Integer reviewStatus;
+
+    /**
+     * 审核信息
+     */
+    private String reviewMessage;
+
+    /**
+     * 审核人 ID
+     */
+    private Long reviewerId;
+
+    /**
+     * 审核时间
+     */
+    private Date reviewTime;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

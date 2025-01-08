@@ -9,6 +9,8 @@ import cn.hutool.http.Method;
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -22,6 +24,7 @@ import java.util.List;
  * @date 2024/12/21
  * @description
  */
+@Slf4j
 @Component("url")
 public class UrlPictureUpload extends PictureUploadTemplate {
 
@@ -73,12 +76,18 @@ public class UrlPictureUpload extends PictureUploadTemplate {
                     throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件大小格式错误");
                 }
             }
+        } catch (Exception e) {
+            // 没必要报错，不需要影响图片上传只需要打印日志即可
+            log.error("文件 HEAD 校验失败  {}", ExceptionUtils.getRootCauseMessage(e));
         }
     }
 
     @Override
     protected String getOriginFilename(Object object) {
         String url = (String) object;
+        if (url.contains("?")) {
+         url = url.substring(0, url.indexOf("?"));
+        }
         return FileUtil.mainName(url).replaceAll(" ", "_") + "." + FileUtil.getSuffix(url);
     }
 }

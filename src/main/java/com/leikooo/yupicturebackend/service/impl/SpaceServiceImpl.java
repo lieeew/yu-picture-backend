@@ -1,5 +1,8 @@
 package com.leikooo.yupicturebackend.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.leikooo.yupicturebackend.dao.PictureDAO;
@@ -17,6 +20,7 @@ import com.leikooo.yupicturebackend.model.entity.Space;
 import com.leikooo.yupicturebackend.model.entity.User;
 import com.leikooo.yupicturebackend.model.enums.SpaceLevelEnum;
 import com.leikooo.yupicturebackend.model.vo.SpaceVO;
+import com.leikooo.yupicturebackend.model.vo.UserVO;
 import com.leikooo.yupicturebackend.service.PictureService;
 import com.leikooo.yupicturebackend.service.SpaceService;
 import com.leikooo.yupicturebackend.service.UserService;
@@ -38,6 +42,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * @author leikooo
@@ -61,14 +66,16 @@ public class SpaceServiceImpl implements SpaceService {
     private final PictureService pictureService;
 
     private final ApplicationEventPublisher eventPublisher;
+    private final UserDAO userDAO;
 
-    public SpaceServiceImpl(TransactionTemplate transactionTemplate, UserService userService, SpaceDAO spaceDAO, PictureDAO pictureDAO, PictureService pictureService, ApplicationEventPublisher eventPublisher) {
+    public SpaceServiceImpl(TransactionTemplate transactionTemplate, UserService userService, SpaceDAO spaceDAO, PictureDAO pictureDAO, PictureService pictureService, ApplicationEventPublisher eventPublisher, UserDAO userDAO) {
         this.transactionTemplate = transactionTemplate;
         this.userService = userService;
         this.spaceDAO = spaceDAO;
         this.pictureDAO = pictureDAO;
         this.pictureService = pictureService;
         this.eventPublisher = eventPublisher;
+        this.userDAO = userDAO;
     }
 
     @Override
@@ -165,17 +172,69 @@ public class SpaceServiceImpl implements SpaceService {
 
     @Override
     public SpaceVO getSpaceVO(Space space, HttpServletRequest request) {
-        return null;
+        // 对象转封装类
+        SpaceVO spaceVO = SpaceVO.objToVo(space);
+        // 关联查询用户信息
+        Long userId = space.getUserId();
+        if (userId != null && userId > 0) {
+            User user = userDAO.getById(userId);
+            UserVO userVO = userService.getUserVO(user);
+            spaceVO.setUser(userVO);
+        }
+        return spaceVO;
     }
 
     @Override
     public Page<SpaceVO> getSpaceVOPage(Page<Space> spacePage, HttpServletRequest request) {
-        return null;
+        List<Space> spaceList = spacePage.getRecords();
+        Page<SpaceVO> spaceVOPage = new Page<>(spacePage.getCurrent(), spacePage.getSize(), spacePage.getTotal());
+        if (CollUtil.isEmpty(spaceList)) {
+            return spaceVOPage;
+        }
+        // 对象列表 => 封装对象列表
+        List<SpaceVO> spaceVOList = spaceList.stream()
+                .map(SpaceVO::objToVo)
+                .collect(Collectors.toList());
+        // 1. 关联查询用户信息
+        // 1,2,3,4
+        Set<Long> userIdSet = spaceList.stream().map(Space::getUserId).collect(Collectors.toSet());
+        // 1 => user1, 2 => user2
+        Map<Long, List<User>> userIdUserListMap = userDAO.listByIds(userIdSet).stream()
+                .collect(Collectors.groupingBy(User::getId));
+        // 2. 填充信息
+        spaceVOList.forEach(spaceVO -> {
+            Long userId = spaceVO.getUserId();
+            User user = null;
+            if (userIdUserListMap.containsKey(userId)) {
+                user = userIdUserListMap.get(userId).get(0);
+            }
+            spaceVO.setUser(userService.getUserVO(user));
+        });
+        spaceVOPage.setRecords(spaceVOList);
+        return spaceVOPage;
     }
 
     @Override
     public QueryWrapper<Space> getQueryWrapper(SpaceQueryRequest spaceQueryRequest) {
-        return null;
+        QueryWrapper<Space> queryWrapper = new QueryWrapper<>();
+        if (spaceQueryRequest == null) {
+            return queryWrapper;
+        }
+        // 从对象中取值
+        Long id = spaceQueryRequest.getId();
+        Long userId = spaceQueryRequest.getUserId();
+        String spaceName = spaceQueryRequest.getSpaceName();
+        Integer spaceLevel = spaceQueryRequest.getSpaceLevel();
+        String sortField = spaceQueryRequest.getSortField();
+        String sortOrder = spaceQueryRequest.getSortOrder();
+        // 拼接查询条件
+        queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
+        queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
+        queryWrapper.like(StrUtil.isNotBlank(spaceName), "spaceName", spaceName);
+        queryWrapper.eq(ObjUtil.isNotEmpty(spaceLevel), "spaceLevel", spaceLevel);
+        // 排序
+        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
+        return queryWrapper;
     }
 
     @Override

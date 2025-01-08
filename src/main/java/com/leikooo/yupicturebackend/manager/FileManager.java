@@ -138,7 +138,7 @@ public class FileManager {
                 .picSize((long) imageInfo.getQuality())
                 .picScale(NumberUtil.round(imageInfo.getHeight() * 1.0 / imageInfo.getWidth(), 2).doubleValue())
                 .picName(params.getImageName())
-                .url(String.format("%s/%s", cosManager.getBaseUrl(), params.getImagePath()))
+                // .url(String.format("%s/%s", cosManager.getBaseUrl(), params.getImagePath()))
                 .build();
     }
 

@@ -6,7 +6,8 @@
 
     <resultMap id="BaseResultMap" type="com.leikooo.yupicturebackend.model.entity.Picture">
             <id property="id" column="id" jdbcType="BIGINT"/>
-            <result property="url" column="url" jdbcType="VARCHAR"/>
+            <result property="spaceId" column="spaceId" jdbcType="BIGINT"/>
+            <result property="urls" column="urls" jdbcType="JAVA_OBJECT" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
             <result property="name" column="name" jdbcType="VARCHAR"/>
             <result property="introduction" column="introduction" jdbcType="VARCHAR"/>
             <result property="category" column="category" jdbcType="VARCHAR"/>
@@ -25,18 +26,15 @@
             <result property="reviewMessage" column="reviewMessage" jdbcType="VARCHAR"/>
             <result property="reviewerId" column="reviewerId" jdbcType="BIGINT"/>
             <result property="reviewTime" column="reviewTime" jdbcType="TIMESTAMP"/>
-            <result property="thumbnailUrl" column="thumbnailUrl" jdbcType="VARCHAR"/>
-            <result property="spaceId" column="spaceId" jdbcType="BIGINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,url,name,
-        introduction,category,tags,
-        picSize,picWidth,picHeight,
-        picScale,picFormat,userId,
-        createTime,editTime,updateTime,
-        isDelete,reviewStatus,reviewMessage,
-        reviewerId,reviewTime,thumbnailUrl,
-        spaceId
+        id,spaceId,urls,
+        name,introduction,category,
+        tags,picSize,picWidth,
+        picHeight,picScale,picFormat,
+        userId,createTime,editTime,
+        updateTime,isDelete,reviewStatus,
+        reviewMessage,reviewerId,reviewTime
     </sql>
 </mapper>

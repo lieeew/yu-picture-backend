@@ -67,8 +67,13 @@ public class PictureVO implements Serializable {
     /**  
      * 图片高度  
      */  
-    private Integer picHeight;  
-  
+    private Integer picHeight;
+
+    /**
+     * 图片主色调
+     */
+    private String picColor;
+
     /**  
      * 图片比例  
      */  
@@ -128,7 +133,9 @@ public class PictureVO implements Serializable {
             return null;  
         }  
         PictureVO pictureVO = new PictureVO();  
-        BeanUtils.copyProperties(picture, pictureVO);  
+        BeanUtils.copyProperties(picture, pictureVO);
+        pictureVO.setUrl(picture.getUrls().getUrl());
+        pictureVO.setThumbnailUrl(picture.getUrls().getThumbnailUrl());
         // 类型不同，需要转换  
         pictureVO.setTags(JSONUtil.toList(picture.getTags(), String.class));  
         return pictureVO;  

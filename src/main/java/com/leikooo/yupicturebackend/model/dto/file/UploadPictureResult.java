@@ -1,5 +1,6 @@
 package com.leikooo.yupicturebackend.model.dto.file;
 
+import com.leikooo.yupicturebackend.model.entity.Urls;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,23 +10,24 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UploadPictureResult {  
-  
-    /**  
-     * 图片地址  
-     */  
-    private String url;
+public class UploadPictureResult {
 
     /**
-     * 缩略图 url
+     * url 集合
      */
-    private String thumbnailUrl;
+    private Urls urls;
 
     /**  
      * 图片名称  
      */  
-    private String picName;  
-  
+    private String picName;
+
+
+    /**
+     * 图片主色调
+     */
+    private String picColor;
+
     /**  
      * 文件体积  
      */  

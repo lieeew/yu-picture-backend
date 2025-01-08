@@ -48,12 +48,12 @@ VALUES ('user001', 'f8de235116ca2ec0b8ee885b5c743072', 'Alice', 'https://example
 create table if not exists picture
 (
     id            bigint auto_increment comment 'id' primary key,
-    url           varchar(512)                       not null comment '图片 user.idurl',
-    thumbnailUrl  varchar(512)                       NULL COMMENT '缩略图 url',
+    urls          JSON                               NOT NULL COMMENT '用户 URL 信息 (url, thumbUrl, transferUrl)',
     name          varchar(128)                       not null comment '图片名称',
     introduction  varchar(512)                       null comment '简介',
     category      varchar(64)                        null comment '分类',
     tags          varchar(512)                       null comment '标签（JSON 数组）',
+    picColor      varchar(16)                        null comment '图片主色调',
     picSize       bigint                             null comment '图片体积',
     picWidth      int                                null comment '图片宽度',
     picHeight     int                                null comment '图片高度',
@@ -77,6 +77,15 @@ create table if not exists picture
     INDEX idx_reviewStatus (reviewStatus), -- 创建基于 reviewStatus 列的索引
     INDEX idx_spaceId (spaceId)            -- 创建基于 spaceId 列的索引
 ) comment '图片' collate = utf8mb4_unicode_ci;
+
+# 把之前 url 和 thumbnailUrl 数据写入到 urls
+UPDATE picture
+SET urls = JSON_OBJECT(
+        'url', COALESCE(url, ''),
+        'thumbUrl', COALESCE(thumbnailUrl, '')
+           )
+WHERE picture.url IS NOT NULL
+   OR picture.thumbnailUrl IS NOT NULL;
 
 -- 空间表
 create table if not exists space

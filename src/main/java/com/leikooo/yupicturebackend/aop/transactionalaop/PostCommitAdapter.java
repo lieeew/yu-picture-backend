@@ -21,7 +21,6 @@ public class PostCommitAdapter implements TransactionSynchronization {
                 runnables = new ArrayList<>();
                 runnables.add(runnable);
                 RUNNABLE.set(runnables);
-
                 TransactionSynchronizationManager.registerSynchronization(this);
             }
             return;

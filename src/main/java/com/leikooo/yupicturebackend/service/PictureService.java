@@ -2,12 +2,14 @@ package com.leikooo.yupicturebackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.leikooo.yupicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.leikooo.yupicturebackend.model.dto.picture.*;
 import com.leikooo.yupicturebackend.model.entity.Picture;
 import com.leikooo.yupicturebackend.model.entity.User;
 import com.leikooo.yupicturebackend.model.vo.PictureVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * @author liang
@@ -118,4 +120,32 @@ public interface PictureService {
      * @param loginUser          登录的用户
      */
     void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
+
+    /**
+     * 按照颜色相似度查询图片
+     *
+     * @param spaceId   spaceId
+     * @param picColor  颜色
+     * @param loginUser 登录的用户
+     * @return 图片 vo 结合
+     */
+    List<PictureVO> searchPictureByColor(Long spaceId, String picColor, User loginUser);
+
+
+    /**
+     * 批量更新
+     *
+     * @param pictureEditByBatchRequest pictureEditByBatchRequest
+     * @param loginUser                 登录的用户
+     */
+    void batchEditPictureMetadata(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
+
+    /**
+     * AI 扩展图片服务
+     *
+     * @param createPictureOutPaintingTaskRequest
+     * @param loginUser 登录的用户
+     * @return
+     */
+    CreateOutPaintingTaskResponse createPictureOutPaintingTask(CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, User loginUser);
 }

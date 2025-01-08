@@ -1,10 +1,16 @@
 package com.leikooo.yupicturebackend.controller;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.leikooo.yupicturebackend.annotation.AuthCheck;
+import com.leikooo.yupicturebackend.api.aliyunai.AliYunAiApi;
+import com.leikooo.yupicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
+import com.leikooo.yupicturebackend.api.aliyunai.model.GetOutPaintingTaskResponse;
+import com.leikooo.yupicturebackend.api.imagsearch.ImageSearchApiFacade;
+import com.leikooo.yupicturebackend.api.imagsearch.model.ImageSearchResult;
 import com.leikooo.yupicturebackend.commen.BaseResponse;
 import com.leikooo.yupicturebackend.commen.DeleteRequest;
 import com.leikooo.yupicturebackend.commen.ResultUtils;
@@ -27,16 +33,14 @@ import com.leikooo.yupicturebackend.service.PictureService;
 import com.leikooo.yupicturebackend.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -58,6 +62,8 @@ public class PictureController {
     private PictureDAO pictureDAO;
 
     private SpaceDAO spaceDAO;
+
+    private AliYunAiApi aliYunAiApi;
 
     private final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
@@ -148,6 +154,31 @@ public class PictureController {
     }
 
     /**
+     * 以图搜图
+     */
+    @PostMapping("/search/picture")
+    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
+        ThrowUtils.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAMS_ERROR);
+        Long pictureId = searchPictureByPictureRequest.getPictureId();
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        Picture oldPicture = pictureDAO.getById(pictureId);
+        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        // 解决无法搜索 webp 格式 url
+        String searchUrl = Optional.of(oldPicture.getUrls()).map(url -> {
+            if (StringUtils.isBlank(url.getTransferUrl())) {
+                if (StringUtils.isNotBlank(url.getThumbnailUrl()) && !url.getThumbnailUrl().endsWith(".webp")) {
+                    return url.getThumbnailUrl();
+                }
+                return StringUtils.isNotBlank(url.getThumbnailUrl()) ? url.getThumbnailUrl() : url.getUrl();
+            }
+            return url.getTransferUrl();
+        }).filter(StringUtils::isNotBlank).get();
+        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(searchUrl);
+        return ResultUtils.success(resultList);
+    }
+
+
+    /**
      * 根据 id 获取图片（仅管理员可用）
      */
     @GetMapping("/get")
@@ -226,19 +257,6 @@ public class PictureController {
                 pictureService.getQueryWrapper(pictureQueryRequest));
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
-    }
-
-    @GetMapping("/list/level")
-    public BaseResponse<List<SpaceLevel>> listSpaceLevel() {
-        // 获取所有枚举
-        List<SpaceLevel> spaceLevelList = Arrays.stream(SpaceLevelEnum.values())
-                .map(spaceLevelEnum -> new SpaceLevel(
-                        spaceLevelEnum.getValue(),
-                        spaceLevelEnum.getText(),
-                        spaceLevelEnum.getMaxCount(),
-                        spaceLevelEnum.getMaxSize()))
-                .collect(Collectors.toList());
-        return ResultUtils.success(spaceLevelList);
     }
 
     /**
@@ -323,6 +341,49 @@ public class PictureController {
         LOCAL_CACHE.put(cacheKey, cacheValue);
         // 返回结果
         return ResultUtils.success(pictureVOPage);
+    }
+
+    @PostMapping("/search/color")
+    public BaseResponse<List<PictureVO>> searchPictureByColor(@RequestBody SearchPictureByColorRequest searchPictureByColorRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(searchPictureByColorRequest == null, ErrorCode.PARAMS_ERROR);
+        String picColor = searchPictureByColorRequest.getPicColor();
+        Long spaceId = searchPictureByColorRequest.getSpaceId();
+        User loginUser = userService.getLoginUser(request);
+        List<PictureVO> result = pictureService.searchPictureByColor(spaceId, picColor, loginUser);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/edit/batch")
+    public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        pictureService.batchEditPictureMetadata(pictureEditByBatchRequest, loginUser);
+        return ResultUtils.success(true);
+    }
+
+    /**
+     * 创建 AI 扩图任务
+     */
+    @PostMapping("/out_painting/create_task")
+    public BaseResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(
+            @RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest,
+            HttpServletRequest request) {
+        if (createPictureOutPaintingTaskRequest == null || createPictureOutPaintingTaskRequest.getPictureId() == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        CreateOutPaintingTaskResponse response = pictureService.createPictureOutPaintingTask(createPictureOutPaintingTaskRequest, loginUser);
+        return ResultUtils.success(response);
+    }
+
+    /**
+     * 查询 AI 扩图任务
+     */
+    @GetMapping("/out_painting/get_task")
+    public BaseResponse<GetOutPaintingTaskResponse> getPictureOutPaintingTask(String taskId) {
+        ThrowUtils.throwIf(StrUtil.isBlank(taskId), ErrorCode.PARAMS_ERROR);
+        GetOutPaintingTaskResponse task = aliYunAiApi.getOutPaintingTask(taskId);
+        return ResultUtils.success(task);
     }
 
 }

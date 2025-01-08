@@ -51,3 +51,9 @@ cos:
     secretKey: ${cos.client.secretKey}
     region: ${cos.client.region}
     bucket: ${cos.client.bucket}
+
+logging.level.org.springframework.web: DEBUG
+
+# 阿里云 AI 配置
+aliYunAi:
+  apiKey: ${aliYunAi.apiKey}

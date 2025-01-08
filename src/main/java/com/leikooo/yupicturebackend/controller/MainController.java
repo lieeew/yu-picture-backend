@@ -18,9 +18,6 @@ import java.util.concurrent.CompletableFuture;
 @RequestMapping("/")
 public class MainController {
     @Resource
-    private AsyncHelper asyncHelper;
-
-    @Resource
     private SpaceService spaceService;
 
     /**

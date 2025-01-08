@@ -15,14 +15,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 @EnableAsync
 public class SpringAsyncConfig {
     
-    @Bean
+    @Bean("yuPictureExecutor")
     public Executor threadPoolTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(10);
         executor.setMaxPoolSize(10);
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setQueueCapacity(200);
-        executor.setThreadNamePrefix("yu-picture-del-executor-");
+        executor.setThreadNamePrefix("yu-picture-executor-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
         return executor;
     }
