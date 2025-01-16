@@ -1,6 +1,5 @@
 package com.leikooo.yupicturebackend.aop.transactionalaop;
 
-import cn.hutool.core.bean.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Component;

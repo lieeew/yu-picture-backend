@@ -8,7 +8,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.leikooo.yupicturebackend.dao.PictureDAO;
 import com.leikooo.yupicturebackend.dao.SpaceDAO;
 import com.leikooo.yupicturebackend.dao.UserDAO;
-import com.leikooo.yupicturebackend.event.SpaceDelEvent;
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
@@ -29,16 +28,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,7 +57,6 @@ public class SpaceServiceImpl implements SpaceService {
 
     private final PictureService pictureService;
 
-    private final ApplicationEventPublisher eventPublisher;
     private final UserDAO userDAO;
 
     public SpaceServiceImpl(TransactionTemplate transactionTemplate, UserService userService, SpaceDAO spaceDAO, PictureDAO pictureDAO, PictureService pictureService, ApplicationEventPublisher eventPublisher, UserDAO userDAO) {
@@ -74,7 +65,6 @@ public class SpaceServiceImpl implements SpaceService {
         this.spaceDAO = spaceDAO;
         this.pictureDAO = pictureDAO;
         this.pictureService = pictureService;
-        this.eventPublisher = eventPublisher;
         this.userDAO = userDAO;
     }
 
@@ -105,6 +95,14 @@ public class SpaceServiceImpl implements SpaceService {
                 // 移除
                 lockMap.remove(loginUser.getId());
             }
+        }
+    }
+
+    @Override
+    public void checkSpaceAuth(User loginUser, Space space) {
+        // 仅本人或管理员可编辑
+        if (!space.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
     }
 

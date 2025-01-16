@@ -1,8 +1,6 @@
 package com.leikooo.yupicturebackend.model.dto.picture;
 
-import com.leikooo.yupicturebackend.model.entity.User;
 import lombok.Data;
-import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
 import java.util.List;

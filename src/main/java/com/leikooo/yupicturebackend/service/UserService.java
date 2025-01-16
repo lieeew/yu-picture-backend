@@ -3,7 +3,6 @@ package com.leikooo.yupicturebackend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.leikooo.yupicturebackend.model.dto.user.UserQueryRequest;
 import com.leikooo.yupicturebackend.model.entity.User;
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.leikooo.yupicturebackend.model.vo.LoginUserVO;
 import com.leikooo.yupicturebackend.model.vo.UserVO;
 

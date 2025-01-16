@@ -25,4 +25,18 @@
         totalCount,userId,createTime,
         editTime,updateTime,isDelete
     </sql>
+
+    <!-- 获取存储使用量排名前 N 的空间 -->
+    <select id="getTopNSpaceUsage" resultType="com.leikooo.yupicturebackend.model.entity.Space">
+        SELECT id, spaceName, userId, totalSize
+        FROM space
+        ORDER BY totalSize DESC
+        LIMIT #{topN}
+    </select>
+
+    <!-- 删除某用户的所有空间 -->
+    <delete id="deleteByUserId">
+        DELETE FROM space WHERE userId = #{userId}
+    </delete>
+
 </mapper>

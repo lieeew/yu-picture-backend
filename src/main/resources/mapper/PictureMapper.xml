@@ -37,4 +37,50 @@
         updateTime,isDelete,reviewStatus,
         reviewMessage,reviewerId,reviewTime
     </sql>
+
+    <select id="getCategoryStatistics" resultType="map">
+        SELECT category AS category,
+        COUNT(*) AS count,
+        SUM(picSize) AS totalSize
+        FROM picture
+        WHERE isDelete = 0
+        <if test="params.queryAll != null and params.queryAll">
+        </if>
+        <if test="params.queryPublic != null and params.queryPublic">
+            AND spaceId IS NULL
+        </if>
+        <if test="params.spaceId != null">
+            AND spaceId = #{params.spaceId}
+        </if>
+        GROUP BY category;
+    </select>
+
+    <select id="analyzeByTimeDimension" resultType="map">
+        SELECT
+        <choose>
+            <when test="params.timeDimension == 'day'">
+                DATE_FORMAT(createTime, '%Y-%m-%d') AS period,
+            </when>
+            <when test="params.timeDimension == 'week'">
+                YEARWEEK(createTime) AS period,
+            </when>
+            <when test="params.timeDimension == 'month'">
+                DATE_FORMAT(createTime, '%Y-%m') AS period,
+            </when>
+        </choose>
+        COUNT(*) AS count
+        FROM picture
+        WHERE isDelete = 0
+        <if test="params.queryAll != null and params.queryAll">
+        </if>
+        <if test="params.queryPublic != null and params.queryPublic">
+            AND spaceId IS NULL
+        </if>
+        <if test="params.spaceId != null">
+            AND spaceId = #{params.spaceId}
+        </if>
+        group by period
+        ORDER BY period
+    </select>
+
 </mapper>

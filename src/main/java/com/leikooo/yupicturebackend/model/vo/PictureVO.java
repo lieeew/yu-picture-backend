@@ -2,10 +2,7 @@ package com.leikooo.yupicturebackend.model.vo;
 
 import cn.hutool.json.JSONUtil;
 import com.leikooo.yupicturebackend.model.entity.Picture;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import java.io.Serializable;
 import java.util.Date;

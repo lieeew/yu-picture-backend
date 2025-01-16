@@ -1,16 +1,16 @@
 package com.leikooo.yupicturebackend.manager;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.http.HttpUtil;
 import com.leikooo.yupicturebackend.config.CosClientConfig;
 import com.qcloud.cos.COSClient;
-import com.qcloud.cos.model.DeleteObjectsRequest;
-import com.qcloud.cos.model.PutObjectRequest;
-import com.qcloud.cos.model.PutObjectResult;
+import com.qcloud.cos.model.*;
 import com.qcloud.cos.model.ciModel.persistence.PicOperations;
+import io.swagger.models.auth.In;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

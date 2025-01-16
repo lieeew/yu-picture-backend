@@ -1,10 +1,6 @@
 package com.leikooo.yupicturebackend.api.aliyunai;
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.http.ContentType;
-import cn.hutool.http.Header;
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
 import cn.hutool.json.JSONUtil;
 import com.leikooo.yupicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
 import com.leikooo.yupicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;

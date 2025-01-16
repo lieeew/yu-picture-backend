@@ -1,7 +1,6 @@
 package com.leikooo.yupicturebackend.event;
 
 import com.leikooo.yupicturebackend.model.entity.Picture;
-import com.leikooo.yupicturebackend.model.entity.User;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 

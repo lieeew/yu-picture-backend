@@ -2,14 +2,10 @@ package com.leikooo.yupicturebackend.controller;
 
 import com.leikooo.yupicturebackend.commen.BaseResponse;
 import com.leikooo.yupicturebackend.commen.ResultUtils;
-import com.leikooo.yupicturebackend.async.AsyncHelper;
 import com.leikooo.yupicturebackend.service.SpaceService;
-import org.springframework.aop.framework.AopContext;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * @author leikooo

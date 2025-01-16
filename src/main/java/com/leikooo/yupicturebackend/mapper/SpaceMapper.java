@@ -1,7 +1,9 @@
 package com.leikooo.yupicturebackend.mapper;
 
-import com.leikooo.yupicturebackend.model.entity.Space;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.leikooo.yupicturebackend.model.entity.Space;
+
+import java.util.List;
 
 /**
 * @author liang
@@ -10,6 +12,10 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @Entity com.leikooo.yupicturebackend.model.entity.Space
 */
 public interface SpaceMapper extends BaseMapper<Space> {
+
+    List<Space> getTopNSpaceUsage(Integer topN);
+
+    void deleteByUserId(Long userId);
 
 }
 

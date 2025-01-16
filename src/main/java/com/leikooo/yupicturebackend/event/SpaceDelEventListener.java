@@ -6,13 +6,9 @@ import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import com.leikooo.yupicturebackend.model.entity.Picture;
 import com.leikooo.yupicturebackend.service.PictureService;
 import lombok.AllArgsConstructor;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;

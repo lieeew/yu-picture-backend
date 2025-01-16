@@ -2,7 +2,6 @@ package com.leikooo.yupicturebackend.dao;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.leikooo.yupicturebackend.mapper.SpaceMapper;
-import com.leikooo.yupicturebackend.model.entity.Picture;
 import com.leikooo.yupicturebackend.model.entity.Space;
 import org.springframework.stereotype.Service;
 

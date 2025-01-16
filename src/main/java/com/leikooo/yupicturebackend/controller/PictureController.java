@@ -21,12 +21,10 @@ import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import com.leikooo.yupicturebackend.model.constant.UserConstant;
 import com.leikooo.yupicturebackend.model.dto.picture.*;
-import com.leikooo.yupicturebackend.model.dto.space.SpaceLevel;
 import com.leikooo.yupicturebackend.model.entity.Picture;
 import com.leikooo.yupicturebackend.model.entity.Space;
 import com.leikooo.yupicturebackend.model.entity.User;
 import com.leikooo.yupicturebackend.model.enums.PictureReviewStatusEnum;
-import com.leikooo.yupicturebackend.model.enums.SpaceLevelEnum;
 import com.leikooo.yupicturebackend.model.vo.PictureTagCategory;
 import com.leikooo.yupicturebackend.model.vo.PictureVO;
 import com.leikooo.yupicturebackend.service.PictureService;
@@ -42,7 +40,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="https://github.com/lieeew">leikooo</a>

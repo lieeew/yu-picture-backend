@@ -7,8 +7,6 @@ import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.manager.CosManager;
 import com.leikooo.yupicturebackend.model.constant.UserConstant;
-import com.leikooo.yupicturebackend.service.PictureService;
-import com.leikooo.yupicturebackend.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

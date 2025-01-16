@@ -27,6 +27,14 @@ public interface SpaceService {
     long addSpace(SpaceAddRequest spaceAddRequest, User loginUser);
 
     /**
+     * 校验登录用户是否由权限操作/查询 Space 空间
+     *
+     * @param loginUser 登录的用户
+     * @param space space
+     */
+    void checkSpaceAuth(User loginUser, Space space);
+
+    /**
      * 校验空间
      *
      * @param space space
