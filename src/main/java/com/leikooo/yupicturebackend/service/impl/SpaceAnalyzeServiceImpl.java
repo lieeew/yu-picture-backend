@@ -50,14 +50,18 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
 
     @Override
     public void checkSpaceAnalyzeAuth(SpaceAnalyzeRequest spaceAnalyzeRequest, User loginUser) {
-        if (spaceAnalyzeRequest.isQueryAll() || spaceAnalyzeRequest.isQueryPublic()) {
-            ThrowUtils.throwIf(!userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR, "无权限查询空间信息");
-        }
-        if (Objects.nonNull(spaceAnalyzeRequest.getSpaceId()) && spaceAnalyzeRequest.getSpaceId() > 0L) {
-            Space space = spaceDAO.getById(spaceAnalyzeRequest.getSpaceId());
-            if (!userService.isAdmin(loginUser) && !space.getUserId().equals(loginUser.getId())) {
-                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限查询空间信息");
-            }
+        boolean queryPublic = spaceAnalyzeRequest.isQueryPublic();
+        boolean queryAll = spaceAnalyzeRequest.isQueryAll();
+        // 全空间分析或者公共图库权限校验：仅管理员可访问
+        if (queryAll || queryPublic) {
+            ThrowUtils.throwIf(!userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR);
+        } else {
+            // 分析特定空间，仅本人或管理员可以访问
+            Long spaceId = spaceAnalyzeRequest.getSpaceId();
+            ThrowUtils.throwIf(spaceId == null, ErrorCode.PARAMS_ERROR);
+            Space space = spaceDAO.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+            spaceService.checkSpaceAuth(loginUser, space);
         }
     }
 

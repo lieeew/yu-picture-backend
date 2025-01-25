@@ -11,6 +11,7 @@ import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.manager.CosManager;
 import com.leikooo.yupicturebackend.model.dto.file.UploadPictureResult;
 import com.leikooo.yupicturebackend.model.entity.Urls;
+import com.leikooo.yupicturebackend.utils.ConvertToPinyinUtils;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.CIObject;
 import com.qcloud.cos.model.ciModel.persistence.CIUploadResult;
@@ -19,6 +20,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.sourceforge.pinyin4j.PinyinHelper;
+import net.sourceforge.pinyin4j.format.HanyuPinyinCaseType;
+import net.sourceforge.pinyin4j.format.HanyuPinyinOutputFormat;
+import net.sourceforge.pinyin4j.format.HanyuPinyinToneType;
+import net.sourceforge.pinyin4j.format.HanyuPinyinVCharType;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.annotation.Resource;
@@ -95,13 +101,14 @@ public abstract class PictureUploadTemplate {
     }
 
     private String generateImageUploadPath(File file, String uploadPathPrefix) {
-        String originalFilename = FileUtil.getName(file);
+        String originalFilename = ConvertToPinyinUtils.convertToPinyinIfChinese(FileUtil.getName(file));
         // 自己拼接文件上传路径，而不是使用原始文件名称，可以增强安全性
         String uploadFilename = String.format("%s_%s.%s", DateUtil.formatDate(new Date()), RandomUtil.randomString(16),
                 originalFilename);
         // 最后结果 public/1867564572229492994/2024-12-21_REArPZjceu7DkRp3.Konachan.jpg
         return String.format("%s/%s", uploadPathPrefix, uploadFilename);
     }
+
 
     /**
      * 获取文件后缀，默认转成小写进行判断

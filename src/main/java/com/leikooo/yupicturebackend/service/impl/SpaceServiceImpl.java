@@ -7,26 +7,33 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.leikooo.yupicturebackend.dao.PictureDAO;
 import com.leikooo.yupicturebackend.dao.SpaceDAO;
+import com.leikooo.yupicturebackend.dao.SpaceUserDAO;
 import com.leikooo.yupicturebackend.dao.UserDAO;
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
+import com.leikooo.yupicturebackend.manager.auth.SaTokenContextHolder;
+import com.leikooo.yupicturebackend.manager.auth.SpaceUserAuthContext;
+import com.leikooo.yupicturebackend.manager.sharding.DynamicShardingManager;
 import com.leikooo.yupicturebackend.model.dto.space.SpaceAddRequest;
 import com.leikooo.yupicturebackend.model.dto.space.SpaceDeleteRequest;
 import com.leikooo.yupicturebackend.model.dto.space.SpaceQueryRequest;
 import com.leikooo.yupicturebackend.model.entity.Picture;
 import com.leikooo.yupicturebackend.model.entity.Space;
+import com.leikooo.yupicturebackend.model.entity.SpaceUser;
 import com.leikooo.yupicturebackend.model.entity.User;
 import com.leikooo.yupicturebackend.model.enums.SpaceLevelEnum;
+import com.leikooo.yupicturebackend.model.enums.SpaceRoleEnum;
+import com.leikooo.yupicturebackend.model.enums.SpaceTypeEnum;
 import com.leikooo.yupicturebackend.model.vo.SpaceVO;
 import com.leikooo.yupicturebackend.model.vo.UserVO;
 import com.leikooo.yupicturebackend.service.PictureService;
 import com.leikooo.yupicturebackend.service.SpaceService;
 import com.leikooo.yupicturebackend.service.UserService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
@@ -43,6 +50,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
+@AllArgsConstructor
 public class SpaceServiceImpl implements SpaceService {
 
     private final TransactionTemplate transactionTemplate;
@@ -59,14 +67,9 @@ public class SpaceServiceImpl implements SpaceService {
 
     private final UserDAO userDAO;
 
-    public SpaceServiceImpl(TransactionTemplate transactionTemplate, UserService userService, SpaceDAO spaceDAO, PictureDAO pictureDAO, PictureService pictureService, ApplicationEventPublisher eventPublisher, UserDAO userDAO) {
-        this.transactionTemplate = transactionTemplate;
-        this.userService = userService;
-        this.spaceDAO = spaceDAO;
-        this.pictureDAO = pictureDAO;
-        this.pictureService = pictureService;
-        this.userDAO = userDAO;
-    }
+    private final SpaceUserDAO spaceUserDAO;
+
+    // private final DynamicShardingManager dynamicShardingManager;
 
     @Override
     public long addSpace(SpaceAddRequest spaceAddRequest, User loginUser) {
@@ -85,9 +88,18 @@ public class SpaceServiceImpl implements SpaceService {
             try {
                 //5）操作数据库
                 Long newSpaceId = transactionTemplate.execute(status -> {
-                    boolean isExist = spaceDAO.isExistSpaceByUserId(loginUser.getId());
+                    boolean isExist = spaceDAO.isExistByUserIdAndType(loginUser.getId(), space.getSpaceType());
                     ThrowUtils.throwIf(isExist, ErrorCode.SYSTEM_ERROR, "用户已存在私有空间");
                     ThrowUtils.throwIf(!spaceDAO.save(space), ErrorCode.SYSTEM_ERROR, "创建失败");
+                    if (SpaceTypeEnum.TEAM.getValue() == space.getSpaceType()) {
+                        SpaceUser spaceUser = SpaceUser.builder()
+                                .userId(space.getUserId())
+                                .spaceRole(SpaceRoleEnum.ADMIN.getValue())
+                                .spaceId(space.getId())
+                                .build();
+                        ThrowUtils.throwIf(!spaceUserDAO.save(spaceUser), ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
+                    }
+                    // dynamicShardingManager.createSpacePictureTable(space);
                     return space.getId();
                 });
                 return Optional.ofNullable(newSpaceId).orElse(-1L);
@@ -108,9 +120,19 @@ public class SpaceServiceImpl implements SpaceService {
 
     private Space buildInsertSpace(SpaceAddRequest spaceAddRequest, User loginUser) {
         Space space = new Space();
+        // 默认值
+        if (StrUtil.isBlank(spaceAddRequest.getSpaceName())) {
+            spaceAddRequest.setSpaceName("默认空间");
+        }
+        if (spaceAddRequest.getSpaceLevel() == null) {
+            spaceAddRequest.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
+        }
+        if (spaceAddRequest.getSpaceType() == null) {
+            spaceAddRequest.setSpaceType(SpaceTypeEnum.PRIVATE.getValue());
+        }
         BeanUtils.copyProperties(spaceAddRequest, space);
         space.setUserId(loginUser.getId());
-        fillSpaceBySpaceLevel(space);
+        this.fillSpaceBySpaceLevel(space);
         return space;
     }
 
@@ -120,7 +142,9 @@ public class SpaceServiceImpl implements SpaceService {
         // 从对象中取值
         String spaceName = space.getSpaceName();
         Integer spaceLevel = space.getSpaceLevel();
+        Integer spaceType = space.getSpaceType();
         SpaceLevelEnum.getEnumByValue(spaceLevel);
+        SpaceTypeEnum spaceTypeEnum = SpaceTypeEnum.getEnumByValue(spaceType);
         // 要创建
         if (add) {
             if (StringUtils.isBlank(spaceName)) {
@@ -128,6 +152,10 @@ public class SpaceServiceImpl implements SpaceService {
             }
             if (spaceLevel == null) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间级别不能为空");
+            }
+            // 修改数据时，如果要改空间级别
+            if (spaceType != null && spaceTypeEnum == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间类型不存在");
             }
         }
         if (StringUtils.isNotBlank(spaceName) && spaceName.length() > 30) {
@@ -155,7 +183,8 @@ public class SpaceServiceImpl implements SpaceService {
 
     /**
      * 校验逻辑是否允许删除空间
-     * @param spaceId spaceId
+     *
+     * @param spaceId   spaceId
      * @param loginUser 登录用户
      */
     private void validDeleteSpace(Long spaceId, User loginUser) {
@@ -172,11 +201,14 @@ public class SpaceServiceImpl implements SpaceService {
     public SpaceVO getSpaceVO(Space space, HttpServletRequest request) {
         // 对象转封装类
         SpaceVO spaceVO = SpaceVO.objToVo(space);
+        User user = userService.getLoginUser(request);
+        List<String> permissionList = ((SpaceUserAuthContext) SaTokenContextHolder.get(user.getId().toString())).getPermissionList();
+        spaceVO.setPermissionList(permissionList);
         // 关联查询用户信息
         Long userId = space.getUserId();
         if (userId != null && userId > 0) {
-            User user = userDAO.getById(userId);
-            UserVO userVO = userService.getUserVO(user);
+            User spaceUser = userDAO.getById(userId);
+            UserVO userVO = userService.getUserVO(spaceUser);
             spaceVO.setUser(userVO);
         }
         return spaceVO;
@@ -225,11 +257,13 @@ public class SpaceServiceImpl implements SpaceService {
         Integer spaceLevel = spaceQueryRequest.getSpaceLevel();
         String sortField = spaceQueryRequest.getSortField();
         String sortOrder = spaceQueryRequest.getSortOrder();
+        Integer spaceType = spaceQueryRequest.getSpaceType();
         // 拼接查询条件
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
         queryWrapper.like(StrUtil.isNotBlank(spaceName), "spaceName", spaceName);
         queryWrapper.eq(ObjUtil.isNotEmpty(spaceLevel), "spaceLevel", spaceLevel);
+        queryWrapper.eq(ObjUtil.isNotEmpty(spaceType), "spaceType", spaceType);
         // 排序
         queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;

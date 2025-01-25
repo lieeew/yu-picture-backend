@@ -26,7 +26,7 @@ import java.util.List;
  */
 @AllArgsConstructor
 @RestController
-@RequestMapping("/space/analyze")
+@RequestMapping("/api/space/analyze")
 public class SpaceAnalyzeController {
 
     private final SpaceAnalyzeService spaceAnalyzeService;
@@ -88,6 +88,5 @@ public class SpaceAnalyzeController {
         List<Space> resultList = spaceAnalyzeService.getSpaceRankAnalyze(spaceRankAnalyzeRequest, loginUser);
         return ResultUtils.success(resultList);
     }
-
 
 }

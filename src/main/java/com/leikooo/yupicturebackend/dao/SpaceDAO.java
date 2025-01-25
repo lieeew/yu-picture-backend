@@ -12,10 +12,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class SpaceDAO extends ServiceImpl<SpaceMapper, Space> {
-    public boolean isExistSpaceByUserId(Long id) {
-        return this.lambdaQuery()
-                .eq(Space::getUserId, id).exists();
-    }
 
     public boolean updateUsage(Long spaceId, Long picSize) {
         return this.lambdaUpdate()
@@ -39,5 +35,12 @@ public class SpaceDAO extends ServiceImpl<SpaceMapper, Space> {
                 .eq(Space::getId, spaceId)
                 .eq(Space::getIsDelete, 0)
                 .one();
+    }
+
+    public boolean isExistByUserIdAndType(Long id, Integer spaceType) {
+        return this.lambdaQuery()
+                .eq(Space::getUserId, id)
+                .eq(Space::getSpaceType, spaceType)
+                .exists();
     }
 }

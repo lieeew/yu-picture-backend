@@ -8,6 +8,10 @@ import com.leikooo.yupicturebackend.dao.SpaceDAO;
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
+import com.leikooo.yupicturebackend.manager.auth.SaTokenContextHolder;
+import com.leikooo.yupicturebackend.manager.auth.SpaceUserAuthContext;
+import com.leikooo.yupicturebackend.manager.auth.StpKit;
+import com.leikooo.yupicturebackend.manager.auth.model.SpaceUserPermissionConstant;
 import com.leikooo.yupicturebackend.model.constant.UserConstant;
 import com.leikooo.yupicturebackend.model.dto.space.*;
 import com.leikooo.yupicturebackend.model.entity.Space;
@@ -34,7 +38,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RestController
-@RequestMapping("/space")
+@RequestMapping("/api/space")
 @AllArgsConstructor
 public class SpaceController {
 

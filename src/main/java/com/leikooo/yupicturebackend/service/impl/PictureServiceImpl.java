@@ -17,6 +17,8 @@ import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
 import com.leikooo.yupicturebackend.exception.ThrowUtils;
 import com.leikooo.yupicturebackend.manager.CosManager;
+import com.leikooo.yupicturebackend.manager.auth.SaTokenContextHolder;
+import com.leikooo.yupicturebackend.manager.auth.SpaceUserAuthContext;
 import com.leikooo.yupicturebackend.manager.factory.UploadFactory;
 import com.leikooo.yupicturebackend.manager.upload.PictureUploadTemplate;
 import com.leikooo.yupicturebackend.model.dto.file.UploadPictureResult;
@@ -112,6 +114,8 @@ public class PictureServiceImpl implements PictureService {
             Picture updatePicture = buildUpdatePicture(loginUser, pictureId, spaceId);
             picture = buildPicture(uploadPictureResult, updatePicture, pictureUploadRequest);
         }
+        // 如果 spaceId 是 null 那么设置默认值为 0
+        picture.setSpaceId(Objects.isNull(picture.getSpaceId()) ? 0 : picture.getSpaceId());
         // 补充审核参数 空间图片不需要校验
         this.fillReviewParams(picture, loginUser);
         // 更新或者插入
@@ -338,6 +342,9 @@ public class PictureServiceImpl implements PictureService {
         PictureVO pictureVO = PictureVO.objToVo(picture);
         // 关联查询用户信息
         Long userId = picture.getUserId();
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = ((SpaceUserAuthContext) SaTokenContextHolder.get(loginUser.getId().toString())).getPermissionList();
+        pictureVO.setPermissionList(permissionList.stream().filter(r -> r.contains("picture")).toList());
         if (userId != null && userId > 0) {
             User user = userDAO.getById(userId);
             UserVO userVO = UserVO.objToVo(user);
@@ -661,7 +668,7 @@ public class PictureServiceImpl implements PictureService {
         // 构造请求参数
         CreateOutPaintingTaskRequest taskRequest = new CreateOutPaintingTaskRequest();
         CreateOutPaintingTaskRequest.Input input = new CreateOutPaintingTaskRequest.Input();
-        input.setImageUrl(picture.getUrls().getUrl());
+        input.setImageUrl(picture.getUrls().getOriginalUrl());
         taskRequest.setInput(input);
         BeanUtil.copyProperties(createPictureOutPaintingTaskRequest, taskRequest);
         // 创建任务

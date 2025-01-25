@@ -1,12 +1,46 @@
 server:
   port: 8123
   servlet:
-    context-path: /api
+    session:
+      cookie:
+        max-age: 259200
 spring:
+  application:
+    name: yu-picture-backend
   profiles:
     active: dev
+  # 空间图片分表
+  shardingsphere:
+    datasource:
+      names: yu_picture
+      yu_picture:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: ${spring.datasource.url}
+        username: ${spring.datasource.username}
+        password: ${spring.datasource.password}
+    rules:
+      sharding:
+        tables:
+          picture:
+            actual-data-nodes: yu_picture.picture  # 动态分表
+            table-strategy:
+              standard:
+                sharding-column: spaceId
+                sharding-algorithm-name: picture_sharding_algorithm  # 使用自定义分片算法
+        sharding-algorithms:
+          picture_sharding_algorithm:
+            type: CLASS_BASED
+            props:
+              strategy: standard
+              algorithmClassName: com.leikooo.yupicturebackend.manager.sharding.PictureShardingAlgorithm
+    props:
+      sql-show: true
+
   session:
     store-type: redis
+    redis:
+      namespace: yu_picture_backend
   servlet:
     multipart:
       max-file-size: 10MB
@@ -19,14 +53,24 @@ spring:
     url: ${spring.redis.url}
     database: ${spring.redis.database}
     username: ${spring.redis.username}
-  application:
-    name: yu-picture-backend
+    timeout: 10s
+    lettuce:
+      pool:
+        # 连接池最大连接数
+        max-active: 200
+        # 连接池最大阻塞等待时间（使用负值表示没有限制）
+        max-wait: -1ms
+        # 连接池中的最大空闲连接
+        max-idle: 10
+        # 连接池中的最小空闲连接
+        min-idle: 0
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
     # 仅在开发环境开启日志
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
+    enable-sql-runner: true
     db-config:
       logic-delete-field: isDelete # 全局逻辑删除的实体字段名
       logic-delete-value: 1 # 逻辑已删除值（默认为 1）

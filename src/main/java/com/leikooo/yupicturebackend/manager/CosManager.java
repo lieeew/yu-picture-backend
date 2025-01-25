@@ -3,11 +3,17 @@ package com.leikooo.yupicturebackend.manager;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.http.HttpUtil;
 import com.leikooo.yupicturebackend.config.CosClientConfig;
+import com.leikooo.yupicturebackend.utils.ConvertToPinyinUtils;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.model.*;
 import com.qcloud.cos.model.ciModel.persistence.PicOperations;
 import io.swagger.models.auth.In;
 import lombok.AllArgsConstructor;
+import net.sourceforge.pinyin4j.PinyinHelper;
+import net.sourceforge.pinyin4j.format.HanyuPinyinCaseType;
+import net.sourceforge.pinyin4j.format.HanyuPinyinOutputFormat;
+import net.sourceforge.pinyin4j.format.HanyuPinyinToneType;
+import net.sourceforge.pinyin4j.format.HanyuPinyinVCharType;
 import org.springframework.stereotype.Component;
 
 import java.io.*;

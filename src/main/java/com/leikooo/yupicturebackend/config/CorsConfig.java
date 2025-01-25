@@ -1,6 +1,5 @@
 package com.leikooo.yupicturebackend.config;
 
-import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -8,7 +7,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @author leikooo
  * @description 跨域配置
  */
-@Configuration
+// @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
     @Override

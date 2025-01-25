@@ -8,6 +8,7 @@ import com.leikooo.yupicturebackend.model.entity.Picture;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author <a href="https://github.com/lieeew">leikooo</a>
@@ -16,16 +17,30 @@ import java.util.List;
  */
 @Service
 public class PictureDAO extends ServiceImpl<PictureMapper, Picture> {
+    /**
+     * SELECT *
+     * FROM picture
+     * WHERE (space_id = 0 AND id = ?) OR (id = ?)
+     *   AND is_delete = 0;
+     * 如果 spaceId 为 0 或者为任意值都差不出来结果的话那么对应的 SpaceId 就是不存在的
+     * @param id pictureId
+     * @return Picture
+     */
     public Picture getByPictureId(Long id) {
         ThrowUtils.throwIf(id == null, ErrorCode.PARAMS_ERROR);
-        return this.query()
-                .eq("id", id)
-                .eq("isDelete", 0).one();
+        // 查询逻辑
+        return this.lambdaQuery()
+                .and(wrapper -> wrapper
+                        .or(r -> r
+                                .eq(Picture::getSpaceId, 0L)
+                                .eq(Picture::getId, id))
+                        .or(r -> r.eq(Picture::getId, id)))
+                .one();
     }
 
     /**
      * sql
-     *SELECT COUNT(*)
+     * SELECT COUNT(*)
      * FROM picture
      * WHERE JSON_CONTAINS(urls, '"xxxx"', '$.url');
      *

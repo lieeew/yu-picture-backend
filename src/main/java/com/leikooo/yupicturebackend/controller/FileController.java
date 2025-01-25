@@ -21,7 +21,7 @@ import java.io.File;
  */
 @Slf4j
 @RestController
-@RequestMapping("/file")
+@RequestMapping("/api/file")
 @AllArgsConstructor
 public class FileController {
 

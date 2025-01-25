@@ -28,9 +28,10 @@ import java.util.List;
  * @description
  */
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/api/user")
 @AllArgsConstructor
 public class UserController {
+
     private UserService userService;
 
     private UserDAO userDAO;

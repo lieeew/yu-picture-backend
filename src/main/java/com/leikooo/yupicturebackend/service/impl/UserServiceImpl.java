@@ -5,6 +5,7 @@ import com.github.xiaoymin.knife4j.core.util.StrUtil;
 import com.leikooo.yupicturebackend.dao.UserDAO;
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
+import com.leikooo.yupicturebackend.manager.auth.StpKit;
 import com.leikooo.yupicturebackend.model.dto.user.UserQueryRequest;
 import com.leikooo.yupicturebackend.model.entity.User;
 import com.leikooo.yupicturebackend.model.enums.UserRoleEnum;
@@ -108,6 +109,9 @@ public class UserServiceImpl implements UserService {
         }
         // 3. 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, user);
+        // 4. 记录用户的登录态 注意这个过去时间和 SpringSession 一致的
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(USER_LOGIN_STATE, user);
         return this.getLoginUserVO(user);
     }
 
@@ -124,7 +128,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getLoginUser(HttpServletRequest request) {
         // 先判断是否已登录
-        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        Object userObj = StpKit.SPACE.getSession().get(USER_LOGIN_STATE);
+        // Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null || currentUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
@@ -141,12 +146,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean userLogout(HttpServletRequest request) {
         // 先判断是否已登录
-        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        Object userObj = StpKit.SPACE.getSession().get(USER_LOGIN_STATE);
         if (userObj == null) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
         }
         // 移除登录态
         request.getSession().removeAttribute(USER_LOGIN_STATE);
+        StpKit.SPACE.logout(((User) userObj).getId());
+        StpKit.SPACE.getSession().removeTokenSign(USER_LOGIN_STATE);
         return true;
     }
 
