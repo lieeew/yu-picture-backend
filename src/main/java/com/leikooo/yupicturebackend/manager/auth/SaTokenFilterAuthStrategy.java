@@ -25,7 +25,7 @@ public class SaTokenFilterAuthStrategy {
     public SaFilterAuthStrategy getSaFilterAuthStrategy() {
         return obj -> {
             // 登录校验：拦截所有路由，排除登录接口
-            if (SaRouter.match("/api/user/login").isHit) {
+            if (SaRouter.match("/api/user/login", "/api/user/register").isHit) {
                 return;
             }
             SaRouter.match("/**", r -> StpKit.SPACE.checkLogin());

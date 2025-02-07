@@ -57,7 +57,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        if (!SaRouter.match("/api/user/login").isHit) {
+        if (!SaRouter.match("/api/user/login", "/api/user/register").isHit) {
             initAuthContextByRequest(request);
         }
         SaTokenFilterAuthStrategy saTokenFilterAuthStrategy = new SaTokenFilterAuthStrategy();
