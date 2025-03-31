@@ -31,16 +31,17 @@ public class GetImagePageUrlApi {
         formData.put("image", imageUrl);  
         formData.put("tn", "pc");  
         formData.put("from", "pc");  
-        formData.put("image_source", "PC_UPLOAD_URL");  
-        // 获取当前时间戳  
+        formData.put("image_source", "PC_UPLOAD_URL");
+        // 获取当前时间戳
         long uptime = System.currentTimeMillis();  
         // 请求地址  
         String url = "https://graph.baidu.com/upload?uptime=" + uptime;  
-  
+        String header = "1742876883046_1742910942849_5FXTkMQcCOfuBbkM4E4mi2Sq6XU8d8cT08OncVQ0YrUw1o15GdAeK1+OPpJeX3gdYGVoKzehG+BytZd+DI5cXF7yr1ZlNH0j07A4LIh4QNHMV88X8vIC8qGkqfTL2PFBOATy7PustDgBQqwJ7s6cJaKZmXS77UAN19eQYisQdrWgel9cNrDDc/J7eS0LpXmgauHZpjPzpxkkySvbvTp2L4coy310BVCAyn9R7mRrAKlwJRi4tLqw77KqREQCH0tOOD+TSa3IaGJzqEiM0Z++bMdXAMSj5qaDF8OC6Vx8v1Sk5psZ+lxPzBRgYKJYfg/q+Nc0JAhphWVy7ytYcfU3UXbsmbXzOUAH9+oWOgaJ2Rp5cdUHdF96hRyDK2AZWhlUAD08minHpNwlJeY6D3AFX0oVXz7sjw9GTOIgz4YBeUo=";
         try {  
             // 2. 发送 POST 请求到百度接口  
             HttpResponse response = HttpRequest.post(url)
-                    .form(formData)  
+                    .form(formData)
+                    .header("Acs-Token", header)
                     .timeout(5000)  
                     .execute();  
             // 判断响应状态  
