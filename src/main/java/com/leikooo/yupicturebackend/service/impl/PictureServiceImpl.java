@@ -114,8 +114,8 @@ public class PictureServiceImpl implements PictureService {
             Picture updatePicture = buildUpdatePicture(loginUser, pictureId, spaceId);
             picture = buildPicture(uploadPictureResult, updatePicture, pictureUploadRequest);
         }
-        // 如果 spaceId 是 null 那么设置默认值为 0
-        picture.setSpaceId(Objects.isNull(picture.getSpaceId()) ? 0 : picture.getSpaceId());
+        // 如果 spaceId 是 null 就是 null
+        picture.setSpaceId(picture.getSpaceId());
         // 补充审核参数 空间图片不需要校验
         this.fillReviewParams(picture, loginUser);
         // 更新或者插入

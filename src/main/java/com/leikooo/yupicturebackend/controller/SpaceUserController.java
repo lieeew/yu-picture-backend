@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import com.leikooo.yupicturebackend.commen.BaseResponse;
 import com.leikooo.yupicturebackend.commen.DeleteRequest;
 import com.leikooo.yupicturebackend.commen.ResultUtils;
+import com.leikooo.yupicturebackend.dao.SpaceDAO;
 import com.leikooo.yupicturebackend.dao.SpaceUserDAO;
 import com.leikooo.yupicturebackend.exception.BusinessException;
 import com.leikooo.yupicturebackend.exception.ErrorCode;
@@ -18,16 +19,16 @@ import com.leikooo.yupicturebackend.service.SpaceUserService;
 import com.leikooo.yupicturebackend.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="https://github.com/lieeew">leikooo</a>
@@ -43,6 +44,8 @@ public class SpaceUserController {
     private final UserService userService;
 
     private final SpaceUserDAO spaceUserDAO;
+
+    private final SpaceDAO spaceDAO;
 
     /**
      * 添加成员到空间
@@ -137,6 +140,10 @@ public class SpaceUserController {
         List<SpaceUser> spaceUserList = spaceUserDAO.list(
                 spaceUserService.getQueryWrapper(spaceUserQueryRequest)
         );
-        return ResultUtils.success(spaceUserService.getSpaceUserVOList(spaceUserList));
+        List<SpaceUser> filterDelSpace = spaceUserList.stream().filter(spaceUser -> {
+            Long spaceId = spaceUser.getSpaceId();
+            return Objects.nonNull(spaceDAO.getById(spaceId));
+        }).toList();
+        return ResultUtils.success(spaceUserService.getSpaceUserVOList(filterDelSpace));
     }
 }
